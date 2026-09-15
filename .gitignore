@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+
+# Environment files (only the *.example templates are committed)
+.env
+.env.local
+.env.*.local
+
+# Editors / OS
+.idea/
+.DS_Store
+Thumbs.db
