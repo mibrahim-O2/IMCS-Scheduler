@@ -1,0 +1,14 @@
+# Phase 0: scaffold (API boots with / and /health)
+fastapi==0.141.1
+uvicorn==0.53.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+
+# Later phases, uncomment when the phase that needs them begins
+# sqlalchemy>=2.0        # ORM models (PROJECT_ARCHITECTURE.md §3)
+# alembic                # migrations for the relational core
+# psycopg[binary]        # PostgreSQL driver
+# python-docx            # Word export (§9)
+# python-multipart       # course scheme file uploads (§7)
+# pytest                 # scheduler and API tests
+# httpx                  # FastAPI TestClient dependency
