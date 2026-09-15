@@ -1,0 +1,11 @@
+/*
+ * Theme strategy: prefers-color-scheme (Tailwind `darkMode: "media"`).
+ * Light/dark follows the operating system setting. The palette's CSS
+ * variables are injected by the plugin in tailwind.config.ts, the only place
+ * hex values live. Adding a manual toggle later means switching that plugin
+ * to a `.dark` class selector; components keep using `bg-surface`,
+ * `bg-card`, `text-content` and `bg-primary` unchanged.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
