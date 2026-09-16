@@ -25,6 +25,13 @@ platform for IMCS. Core pieces:
    generated timetables.
 4. **Export** — Word/PDF timetable output with the IMCS crest.
 
+**Scope of scheduling:** IMCS is organized as three departments (Computer
+Science, Artificial Intelligence, Mathematics), and each department offers
+several program levels (BS, Master, M.Phil, Ph.D, M.Sc. (Pass), Post Graduate
+Diploma). Every level is represented in the data model and listed in
+navigation, but **only BS-level programs are scheduled in the current build** —
+see §3.1.
+
 ---
 
 ## 2. Tech Stack
@@ -57,21 +64,59 @@ All models live conceptually in `backend/app/models/`. Types below are
 descriptive, not final column-level DDL — exact constraints get pinned down
 when the models are actually implemented.
 
-### 3.1 Program
+### 3.1 Department and Program
+A department offers several program levels, so a `Program` is one
+(department + level) pair — not a department on its own. `Department` is the
+stable top-level grouping used for the homepage hierarchy.
+
 ```
-Program
+Department        -- exactly 3 rows
 - id
-- name            e.g. "BS Computer Science"
-- short_code      "BSCS" | "BSAI" | "MATH"
-- has_shift_split  bool   (True for CS/AI, False for Math)
-- has_pm_pe_split_from_part  int | null   (2 for CS/AI, null for Math — unconfirmed, kept overridable)
-- total_semesters  int (8)
-- level           "BS" | "Masters" | "MPhil"   (for homepage hierarchy: BSCS shows all its levels first)
+- name             "Computer Science" | "Artificial Intelligence" | "Mathematics"
+- short_code       "CS" | "AI" | "MATH"
+- display_order    int   (homepage order: CS -> AI -> Math)
 ```
+
+```
+Program           -- one (department + level) combination
+- id
+- department_id    -> Department
+- level            "BS" | "Master" | "MPhil" | "MPhilBioinformatics"
+                     | "PhD" | "MScPass" | "PGD"
+- display_name     e.g. "BS Computer Science",
+                        "M.Phil (Bioinformatics) — Artificial Intelligence"
+- total_semesters  int | null   (only where semester-by-semester structure is
+                                  tracked — 8 for BS, null for levels we do
+                                  not model that way yet)
+- is_schedulable   bool  -- TRUE only for BS-level programs today. This flag is
+                            how the system knows which programs get Divisions
+                            and Timetables generated, versus which are listed
+                            in navigation but not scheduled.
+- has_shift_split            bool        (Morning/Evening — true for CS/AI BS, false for Math)
+- has_pm_pe_split_from_part  int | null  (2 for CS/AI BS, null for Math — unconfirmed, kept overridable)
+```
+
+`has_shift_split` and `has_pm_pe_split_from_part` are only meaningful when
+`is_schedulable` is true (BS level today) and are ignored for other levels.
+
+Levels offered today, per the university's course scheme portal:
+
+| Department | Levels |
+|---|---|
+| Computer Science | BS, Master of Computer Science (MCS), M.Phil, M.Phil (Bioinformatics), Ph.D, M.Sc. (Pass), Post Graduate Diploma |
+| Artificial Intelligence | BS, Master of Artificial Intelligence, M.Phil, M.Phil (Bioinformatics), Ph.D, M.Sc. (Pass), Post Graduate Diploma |
+| Mathematics | BS, M.Sc. (Pass), M.Phil, Ph.D |
+
+**Current build scope:** no Divisions, Course Schemes or Timetables are created
+for non-BS levels. Carrying every level in the model now is a data-model and
+navigation accommodation, so that scheduling another level later is a new
+`Program` row with `is_schedulable = true` rather than a breaking schema
+change. Whether Mathematics has a PM/PE split is open question §11.1.
 
 ### 3.2 Division (a.k.a. Section)
 The unit an actual timetable is generated for: one Program + Part + Shift
-(+ Group where applicable).
+(+ Group where applicable). Divisions exist only for programs with
+`is_schedulable = true` (BS level today — see §3.1).
 ```
 Division
 - id
@@ -137,7 +182,8 @@ Course
 ```
 
 ### 3.6 CourseScheme
-The flexible piece — one row per Program + scheme (admission) year.
+The flexible piece — one row per Program + scheme (admission) year, for
+schedulable programs (BS level today — see §3.1).
 ```
 CourseScheme
 - id
@@ -186,6 +232,8 @@ TimetableSession  (child — one row per placed class = one GA gene, materialize
 
 ### 3.8 Relationships at a glance
 ```
+Department 1---N Program          (one Program row per department + level;
+                                   only is_schedulable programs go further)
 Program 1---N Division 1---N TimetableSession N---1 Timetable
 Program 1---N CourseScheme 1---N Course
 Division N---1 CourseScheme
@@ -265,7 +313,7 @@ and soft constraint is its own testable function in `constraints/hard.py` /
 frontend/
 ├── app/
 │   ├── layout.tsx
-│   ├── page.tsx                   # homepage — hierarchy: BSCS -> BSAI -> Math
+│   ├── page.tsx                   # homepage — departments CS -> AI -> Math, each listing its levels
 │   ├── (programs)/
 │   │   └── [programCode]/
 │   │       └── [part]/page.tsx    # division timetable view
@@ -286,6 +334,13 @@ frontend/
 ├── next.config.js
 └── package.json
 ```
+
+**Homepage hierarchy:** the three Departments render in order (Computer
+Science → Artificial Intelligence → Mathematics), and each lists **all** of
+its program levels, not only BS. Only programs with `is_schedulable = true`
+(BS today) link through to a timetable view at `[programCode]/[part]`; every
+other level is listed as an informational / "coming soon" entry with no
+timetable route behind it. See §3.1.
 
 ---
 
@@ -421,6 +476,10 @@ Full source: `docs/color-palette.md`. Summary for implementers:
    the data model.
 3. BSCS 2022 & 2025 schemes, and all BSAI/Math scheme years, are still to be
    collected.
+4. Which non-BS levels (Master, M.Phil, Ph.D, M.Sc. Pass, PGD) will eventually
+   need real timetables, and do they use the same Division / Shift / Group
+   structure as BS? Deferred until a level beyond BS is actually scheduled —
+   until then those programs carry `is_schedulable = false` (§3.1).
 
 ---
 
@@ -433,6 +492,8 @@ Full source: `docs/color-palette.md`. Summary for implementers:
 - Any RAG-based chatbot for live schedule data (see §8).
 - Hybrid GA + OR-Tools CP-SAT — noted as a possible future upgrade if pure
   GA convergence proves too slow, not part of the current build.
+- Divisions, Course Schemes and Timetables for non-BS program levels. Those
+  levels are modeled and listed only; scheduling them is future work (§3.1).
 
 ---
 
