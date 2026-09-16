@@ -1,14 +1,16 @@
 "use client";
 
+import { SemesterTable } from "@/components/scheme-upload/semester-table";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { countCourses, type SemesterRows } from "@/lib/schemes";
+import { pairSemesters, summarize, type SemesterRows } from "@/lib/schemes";
 
 export function PreviewStep({
   programName,
   schemeYear,
   fileName,
   semesters,
-  busy,
+  saving,
   onBack,
   onConfirm,
 }: {
@@ -16,74 +18,67 @@ export function PreviewStep({
   schemeYear: number;
   fileName: string;
   semesters: SemesterRows[];
-  busy: boolean;
+  saving: boolean;
   onBack: () => void;
   onConfirm: () => void;
 }) {
-  // Step 4: last look before anything is written. Confirm uploads the file and saves the rows.
+  // Step 4: exactly what will be stored — labs are shown merged the same way the server merges them.
+  const paired = pairSemesters(semesters);
+  const totals = summarize(paired);
+  const mergedLabRows = summarize(semesters).courses - totals.courses;
+
+  const facts: [string, string][] = [
+    ["Program", programName],
+    ["Scheme year", String(schemeYear)],
+    ["Document", fileName],
+    ["Courses", String(totals.courses)],
+    ["With a lab", String(totals.labs)],
+    ["Credit hours", String(totals.creditHours)],
+  ];
+
   return (
     <section className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-content">Preview before saving</h2>
         <p className="mt-1 text-sm text-content/70">
-          Nothing has been saved yet. Confirm to store the document and the course list.
+          Nothing has been saved yet. Confirm to store the document and this course list.
         </p>
       </div>
 
-      <dl className="grid grid-cols-1 gap-3 rounded-xl bg-surface p-4 ring-1 ring-content/15 sm:grid-cols-3">
-        {[
-          ["Program", programName],
-          ["Scheme year", String(schemeYear)],
-          ["File", fileName],
-        ].map(([label, value]) => (
+      <dl className="grid grid-cols-2 gap-4 rounded-xl bg-surface p-4 ring-1 ring-content/15 sm:grid-cols-3">
+        {facts.map(([label, value]) => (
           <div key={label} className="min-w-0">
             <dt className="text-xs font-medium uppercase tracking-wide text-content/60">{label}</dt>
-            <dd className="mt-1 break-words text-sm text-content">{value}</dd>
+            <dd className="mt-1 break-words text-sm font-medium text-content">{value}</dd>
           </div>
         ))}
       </dl>
 
-      {semesters.map((semester) => (
-        <div key={semester.semester} className="rounded-xl bg-surface ring-1 ring-content/15">
-          <h3 className="px-4 py-3 text-sm font-semibold text-content">
-            Semester {semester.semester} · {semester.courses.length} course
-            {semester.courses.length === 1 ? "" : "s"}
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="bg-content/5 text-xs uppercase tracking-wide text-content/60">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Code</th>
-                  <th className="px-4 py-2 font-medium">Name</th>
-                  <th className="px-4 py-2 font-medium">Cr.</th>
-                  <th className="px-4 py-2 font-medium">Lab</th>
-                  <th className="px-4 py-2 font-medium">Marks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {semester.courses.map((course, index) => (
-                  <tr key={`${course.code}-${index}`} className="border-t border-content/10">
-                    <td className="px-4 py-2 font-mono text-xs">{course.code}</td>
-                    <td className="px-4 py-2">{course.name}</td>
-                    <td className="px-4 py-2">{course.credit_hours ?? "NC"}</td>
-                    <td className="px-4 py-2">{course.has_lab ? course.lab_credit_hours ?? "yes" : "—"}</td>
-                    <td className="px-4 py-2">
-                      {course.min_marks ?? "—"} / {course.max_marks ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ))}
+      {mergedLabRows > 0 && (
+        <Alert tone="info">
+          {mergedLabRows} separate lab row{mergedLabRows === 1 ? "" : "s"} will be merged into
+          {mergedLabRows === 1 ? " its" : " their"} theory course{mergedLabRows === 1 ? "" : "s"}, so{" "}
+          {totals.courses} courses will be saved.
+        </Alert>
+      )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <Button variant="secondary" onClick={onBack} disabled={busy} className="w-full sm:w-auto">
+      <div className="space-y-4">
+        {paired.map((semester) => (
+          <SemesterTable key={semester.semester} semester={semester} />
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        {saving && (
+          <p className="text-center text-xs text-content/60 sm:mr-auto sm:text-left">
+            Uploading the document and saving {totals.courses} courses…
+          </p>
+        )}
+        <Button variant="secondary" onClick={onBack} disabled={saving} className="w-full sm:w-auto">
           Back
         </Button>
-        <Button onClick={onConfirm} disabled={busy} className="w-full sm:w-auto">
-          {busy ? "Saving…" : `Confirm and save ${countCourses(semesters)} courses`}
+        <Button onClick={onConfirm} loading={saving} className="w-full sm:w-auto">
+          {saving ? "Saving…" : `Confirm and save ${totals.courses} courses`}
         </Button>
       </div>
     </section>

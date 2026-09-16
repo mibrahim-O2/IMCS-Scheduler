@@ -1,5 +1,6 @@
 /**
- * Types and API calls for the Course Scheme feature (docs/PROJECT_ARCHITECTURE.md §7).
+ * Types, lab pairing and API calls for the Course Scheme feature
+ * (docs/PROJECT_ARCHITECTURE.md §3.5 and §7).
  */
 
 import { apiFetch, apiUpload } from "@/lib/api-client";
@@ -54,11 +55,15 @@ export type SchemeSummary = {
   uploaded_at: string;
   is_active: boolean;
   course_count: number;
+  lab_course_count: number;
 };
 
 export type SchemeDetail = SchemeSummary & {
   content: { semesters: SemesterRows[]; raw_text?: string };
+  semesters: SemesterRows[];
 };
+
+const LAB_SUFFIX = /\s*\(\s*LAB\s*\)\s*$/i;
 
 export function emptyCourse(): CourseRow {
   // A blank row for the structured form to start from.
@@ -73,31 +78,87 @@ export function emptyCourse(): CourseRow {
   };
 }
 
-export function countCourses(semesters: SemesterRows[]): number {
-  // Total course rows across every semester, used in the preview and save button.
-  return semesters.reduce((total, semester) => total + semester.courses.length, 0);
+function normalizeName(name: string): string {
+  // Case- and spacing-insensitive course name, used to match a lab row to its theory course.
+  return name.trim().replace(/\s+/g, " ").toUpperCase();
 }
 
-export async function fetchDepartments(): Promise<Department[]> {
+export function labBaseName(name: string): string | null {
+  // For a "NAME (LAB)" row, the theory course name it belongs to; null for an ordinary course.
+  const match = LAB_SUFFIX.exec(name);
+  return match ? normalizeName(name.slice(0, match.index)) : null;
+}
+
+export function pairLabRows(courses: CourseRow[]): CourseRow[] {
+  // The same rule the backend applies on save: a "(LAB)" row is folded into the theory course
+  // with the same name, becoming has_lab + lab_credit_hours there. A lab with no matching
+  // theory course is kept as its own row rather than dropped.
+  const rows = courses.map((course) => ({ ...course }));
+  const theoryByName = new Map<string, CourseRow>();
+  for (const row of rows) {
+    const key = normalizeName(row.name);
+    if (labBaseName(row.name) === null && !theoryByName.has(key)) theoryByName.set(key, row);
+  }
+
+  const paired: CourseRow[] = [];
+  for (const row of rows) {
+    const baseName = labBaseName(row.name);
+    const theory = baseName === null ? undefined : theoryByName.get(baseName);
+    if (baseName === null) {
+      paired.push(row);
+    } else if (theory) {
+      theory.has_lab = true;
+      theory.lab_credit_hours = row.credit_hours;
+    } else {
+      paired.push({ ...row, has_lab: true, lab_credit_hours: row.lab_credit_hours ?? row.credit_hours });
+    }
+  }
+  return paired;
+}
+
+export function pairSemesters(semesters: SemesterRows[]): SemesterRows[] {
+  // Applies lab pairing inside each semester; a lab never pairs across semesters.
+  return semesters.map((semester) => ({ ...semester, courses: pairLabRows(semester.courses) }));
+}
+
+export function summarize(semesters: SemesterRows[]): { courses: number; labs: number; creditHours: number } {
+  // Course count, lab-bearing course count and total credit hours (lab credits included).
+  let courses = 0;
+  let labs = 0;
+  let creditHours = 0;
+  for (const semester of semesters) {
+    for (const course of semester.courses) {
+      courses += 1;
+      creditHours += course.credit_hours ?? 0;
+      if (course.has_lab) {
+        labs += 1;
+        creditHours += course.lab_credit_hours ?? 0;
+      }
+    }
+  }
+  return { courses, labs, creditHours };
+}
+
+export function fetchDepartments(): Promise<Department[]> {
   // Departments with their programs; the form only offers the schedulable ones.
   return apiFetch<Department[]>("/api/v1/programs");
 }
 
-export async function extractSchemeText(file: File): Promise<ExtractionResponse> {
+export function extractSchemeText(file: File): Promise<ExtractionResponse> {
   // Step 1: send the document up and get its text back. Nothing is saved yet.
   const form = new FormData();
   form.append("file", file);
   return apiUpload<ExtractionResponse>("/api/v1/course-schemes/extract", form);
 }
 
-export async function saveScheme(params: {
+export function saveScheme(params: {
   file: File;
   programId: number;
   schemeYear: number;
   semesters: SemesterRows[];
   rawText: string;
 }): Promise<SchemeDetail> {
-  // Final confirm: uploads the original file and saves the structured rows in one request.
+  // Final confirm: uploads the original file and saves the rows as entered in one request.
   const form = new FormData();
   form.append("file", params.file);
   form.append(
@@ -112,12 +173,17 @@ export async function saveScheme(params: {
   return apiUpload<SchemeDetail>("/api/v1/course-schemes", form);
 }
 
-export async function fetchSchemes(): Promise<SchemeSummary[]> {
+export function fetchSchemes(): Promise<SchemeSummary[]> {
   // Saved schemes for the list view, newest first.
   return apiFetch<SchemeSummary[]>("/api/v1/course-schemes");
 }
 
-export async function deleteScheme(id: number): Promise<SchemeSummary> {
+export function fetchScheme(id: number): Promise<SchemeDetail> {
+  // One saved scheme with its courses grouped by semester, labs already paired.
+  return apiFetch<SchemeDetail>(`/api/v1/course-schemes/${id}`);
+}
+
+export function deleteScheme(id: number): Promise<SchemeSummary> {
   // Soft-deletes one scheme; the backend refuses if a published timetable uses it.
   return apiFetch<SchemeSummary>(`/api/v1/course-schemes/${id}`, { method: "DELETE" });
 }
