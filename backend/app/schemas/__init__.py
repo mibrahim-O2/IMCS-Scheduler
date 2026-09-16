@@ -1,5 +1,4 @@
-"""Pydantic request/response schemas.
+"""Pydantic request/response schemas, mirroring app/models/.
 
-Will mirror app/models/ with one module per entity, added alongside each
-model. See docs/PROJECT_ARCHITECTURE.md §4.
+See docs/PROJECT_ARCHITECTURE.md §4.
 """

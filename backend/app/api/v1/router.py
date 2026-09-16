@@ -1,5 +1,11 @@
-"""Aggregates all v1 endpoint routers into one APIRouter.
+"""Aggregates the v1 endpoint routers into one router, mounted by app/main.py.
 
-Will be mounted in app/main.py under /api/v1 once the first real endpoint
-exists; Phase 0 exposes only `/` and `/health`. See docs/PROJECT_ARCHITECTURE.md §4.
+See docs/PROJECT_ARCHITECTURE.md §4.
 """
+
+from fastapi import APIRouter
+
+from app.api.v1.endpoints import programs
+
+api_router = APIRouter()
+api_router.include_router(programs.router, tags=["programs"])
