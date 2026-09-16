@@ -5,19 +5,15 @@ Returns all three departments with every program level each one offers;
 See docs/PROJECT_ARCHITECTURE.md §3.1, §4, §5.
 """
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import selectinload
 
-from app.db.session import get_db
+from app.api.deps import DbSession
 from app.models import Department
 from app.schemas.program import DepartmentRead
 
 router = APIRouter()
-
-DbSession = Annotated[Session, Depends(get_db)]
 
 
 @router.get("/programs", response_model=list[DepartmentRead])
