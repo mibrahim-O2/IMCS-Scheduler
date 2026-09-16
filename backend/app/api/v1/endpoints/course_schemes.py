@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
-from app.models import Course, CourseScheme, Program
+from app.models import CourseScheme, Program
 from app.schemas.course_scheme import (
     ExtractionResponse,
     SchemeCreate,
@@ -127,12 +127,13 @@ def list_schemes(db: DbSession, include_inactive: bool = False) -> list[SchemeSu
         statement = statement.where(CourseScheme.is_active.is_(True))
 
     rows = db.execute(statement.order_by(CourseScheme.uploaded_at.desc())).all()
-    return [_to_summary(db, scheme, program) for scheme, program in rows]
+    counts = service.course_counts(db, [scheme.id for scheme, _ in rows])
+    return [_to_summary(scheme, program, counts.get(scheme.id, (0, 0))) for scheme, program in rows]
 
 
 @router.get("/{scheme_id}", response_model=SchemeDetail)
 def get_scheme(scheme_id: int, db: DbSession) -> SchemeDetail:
-    # Full scheme including its content JSON, for viewing one saved scheme.
+    # One saved scheme with its courses grouped by semester, labs shown on their theory course.
     scheme, program = _get_scheme_or_404(db, scheme_id)
     return _to_detail(db, scheme, program)
 
@@ -152,7 +153,7 @@ def delete_scheme(scheme_id: int, db: DbSession) -> SchemeSummary:
     scheme.is_active = False
     db.commit()
     db.refresh(scheme)
-    return _to_summary(db, scheme, program)
+    return _to_summary(scheme, program, _counts_for(db, scheme.id))
 
 
 def _parse_payload(payload: str) -> SchemeCreate:
@@ -176,13 +177,14 @@ def _get_scheme_or_404(db: Session, scheme_id: int) -> tuple[CourseScheme, Progr
     return row[0], row[1]
 
 
-def _count_courses(db: Session, scheme_id: int) -> int:
-    # How many materialized Course rows this scheme produced.
-    return db.scalar(select(func.count()).select_from(Course).where(Course.scheme_id == scheme_id)) or 0
+def _counts_for(db: Session, scheme_id: int) -> tuple[int, int]:
+    # (total courses, courses with a lab) for a single scheme.
+    return service.course_counts(db, [scheme_id]).get(scheme_id, (0, 0))
 
 
-def _to_summary(db: Session, scheme: CourseScheme, program: Program) -> SchemeSummary:
+def _to_summary(scheme: CourseScheme, program: Program, counts: tuple[int, int]) -> SchemeSummary:
     # Shapes one scheme row for the list view.
+    course_count, lab_course_count = counts
     return SchemeSummary(
         id=scheme.id,
         program_id=scheme.program_id,
@@ -192,10 +194,15 @@ def _to_summary(db: Session, scheme: CourseScheme, program: Program) -> SchemeSu
         file_url=scheme.file_url,
         uploaded_at=scheme.uploaded_at,
         is_active=scheme.is_active,
-        course_count=_count_courses(db, scheme.id),
+        course_count=course_count,
+        lab_course_count=lab_course_count,
     )
 
 
 def _to_detail(db: Session, scheme: CourseScheme, program: Program) -> SchemeDetail:
-    # Same as the summary, plus the stored content JSON.
-    return SchemeDetail(**_to_summary(db, scheme, program).model_dump(), content=scheme.content)
+    # The summary plus the stored content and the paired per-semester course view.
+    return SchemeDetail(
+        **_to_summary(scheme, program, _counts_for(db, scheme.id)).model_dump(),
+        content=scheme.content,
+        semesters=service.paired_semesters(scheme.content),
+    )

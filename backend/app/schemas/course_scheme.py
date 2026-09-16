@@ -1,6 +1,6 @@
 """Request/response schemas for Course Scheme upload, review and listing.
 
-See docs/PROJECT_ARCHITECTURE.md §3.6 and §7.
+See docs/PROJECT_ARCHITECTURE.md §3.5, §3.6 and §7.
 """
 
 from datetime import datetime
@@ -18,26 +18,28 @@ class ExtractionResponse(BaseModel):
     warnings: list[str] = []
 
 
-class CourseIn(BaseModel):
+class CourseRow(BaseModel):
     code: str = Field(min_length=1, max_length=20)
     name: str = Field(min_length=1, max_length=200)
 
     # Null means non-credit, written as "NC" in the scheme documents.
     credit_hours: int | None = Field(default=None, ge=0, le=20)
 
+    # A lab belongs to its theory course; lab_credit_hours is that lab's own credit.
     has_lab: bool = False
     lab_credit_hours: int | None = Field(default=None, ge=0, le=20)
+
     min_marks: int | None = Field(default=None, ge=0, le=1000)
     max_marks: int | None = Field(default=None, ge=0, le=1000)
 
 
-class SemesterIn(BaseModel):
+class SemesterRows(BaseModel):
     semester: int = Field(ge=1, le=8)
-    courses: list[CourseIn]
+    courses: list[CourseRow]
 
 
 class SchemeContentIn(BaseModel):
-    semesters: list[SemesterIn] = Field(min_length=1)
+    semesters: list[SemesterRows] = Field(min_length=1)
 
 
 class SchemeCreate(BaseModel):
@@ -61,7 +63,11 @@ class SchemeSummary(BaseModel):
     uploaded_at: datetime
     is_active: bool
     course_count: int
+    lab_course_count: int
 
 
 class SchemeDetail(SchemeSummary):
+    # content is the source of record exactly as entered; semesters is the paired view
+    # (labs folded into their theory courses) that the Course rows were built from.
     content: dict[str, Any]
+    semesters: list[SemesterRows]
