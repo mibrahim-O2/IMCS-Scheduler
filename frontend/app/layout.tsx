@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+
+import { SiteHeader } from "@/components/ui/site-header";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,9 +13,13 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  // Shared shell: palette-driven page background with the site header above every page.
   return (
     <html lang="en">
-      <body className="min-h-screen bg-surface text-content antialiased">{children}</body>
+      <body className="min-h-screen bg-surface text-content antialiased">
+        <SiteHeader />
+        {children}
+      </body>
     </html>
   );
 }
