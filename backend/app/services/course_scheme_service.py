@@ -14,7 +14,7 @@ from typing import Any
 
 import httpx
 import pdfplumber
-from sqlalchemy import delete, inspect, text
+from sqlalchemy import delete, func, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -25,6 +25,9 @@ SCHEME_BUCKET = "course-schemes"
 # A real text PDF gives us far more than this per page; anything less means the
 # page is an image and needs OCR.
 MIN_CHARS_PER_PAGE = 120
+
+# Scheme documents list a lab as its own row, e.g. "PROGRAMMING FUNDAMENTALS (LAB)".
+LAB_SUFFIX_RE = re.compile(r"\s*\(\s*LAB\s*\)\s*$", re.IGNORECASE)
 
 OCR_DPI = 300
 STORAGE_TIMEOUT_SECONDS = 60
@@ -131,12 +134,51 @@ def _extract_word(suffix: str, data: bytes) -> ExtractionResult:
     return ExtractionResult(text="\n".join(lines), method="word", page_count=0)
 
 
-def iter_content_courses(content: dict[str, Any]):
-    # Walks the semester-grouped content JSON and yields each course row with its semester attached.
-    for semester in content.get("semesters", []):
-        semester_number = semester.get("semester")
-        for course in semester.get("courses", []):
-            yield semester_number, course
+def _normalize_name(name: str) -> str:
+    # Case- and spacing-insensitive form of a course name, used to match a lab to its theory course.
+    return " ".join(name.split()).upper()
+
+
+def _lab_base_name(name: str) -> str | None:
+    # For a "NAME (LAB)" row, the normalized theory name it belongs to; None for an ordinary course.
+    match = LAB_SUFFIX_RE.search(name)
+    return _normalize_name(name[: match.start()]) if match else None
+
+
+def pair_lab_rows(courses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    # Folds each "(LAB)" row into the theory course with the same name, so a lab becomes
+    # has_lab + lab_credit_hours on that course instead of a course of its own. Order is kept.
+    # A lab with no matching theory course stays as its own row rather than being dropped.
+    rows = [dict(course) for course in courses]
+
+    theory_by_name: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if _lab_base_name(row["name"]) is None:
+            theory_by_name.setdefault(_normalize_name(row["name"]), row)
+
+    paired = []
+    for row in rows:
+        base_name = _lab_base_name(row["name"])
+        if base_name is None:
+            paired.append(row)
+        elif base_name in theory_by_name:
+            theory = theory_by_name[base_name]
+            theory["has_lab"] = True
+            theory["lab_credit_hours"] = row.get("credit_hours")
+        else:
+            row["has_lab"] = True
+            row["lab_credit_hours"] = row.get("lab_credit_hours") or row.get("credit_hours")
+            paired.append(row)
+    return paired
+
+
+def paired_semesters(content: dict[str, Any]) -> list[dict[str, Any]]:
+    # The scheme's semesters with labs folded into their theory courses (pairing never crosses
+    # semesters). This is exactly what becomes Course rows, and what the UI shows for a saved scheme.
+    return [
+        {"semester": semester.get("semester"), "courses": pair_lab_rows(semester.get("courses", []))}
+        for semester in content.get("semesters", [])
+    ]
 
 
 def materialize_courses(session: Session, scheme: CourseScheme) -> int:
@@ -154,10 +196,28 @@ def materialize_courses(session: Session, scheme: CourseScheme) -> int:
             min_marks=course.get("min_marks"),
             max_marks=course.get("max_marks"),
         )
-        for _, course in iter_content_courses(scheme.content)
+        for semester in paired_semesters(scheme.content)
+        for course in semester["courses"]
     ]
     session.add_all(rows)
     return len(rows)
+
+
+def course_counts(session: Session, scheme_ids: list[int]) -> dict[int, tuple[int, int]]:
+    # Total and lab-bearing Course counts per scheme, in one grouped query instead of one per scheme.
+    if not scheme_ids:
+        return {}
+
+    rows = session.execute(
+        select(
+            Course.scheme_id,
+            func.count(Course.id),
+            func.count(Course.id).filter(Course.has_lab.is_(True)),
+        )
+        .where(Course.scheme_id.in_(scheme_ids))
+        .group_by(Course.scheme_id)
+    ).all()
+    return {scheme_id: (total, labs) for scheme_id, total, labs in rows}
 
 
 def find_blocking_timetables(session: Session, scheme_id: int) -> list[str]:
