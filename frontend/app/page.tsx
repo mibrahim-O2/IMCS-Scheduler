@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { API_BASE_URL } from "@/lib/api-client";
 
@@ -41,12 +42,20 @@ export default function HomePage() {
           ))}
         </ul>
 
-        <a
-          href={`${API_BASE_URL}/docs`}
-          className="mt-8 inline-block rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          Backend API docs
-        </a>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link
+            href="/schemes"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
+          >
+            Course schemes
+          </Link>
+          <a
+            href={`${API_BASE_URL}/docs`}
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-surface px-5 py-2.5 text-sm font-medium text-content ring-1 ring-content/20 hover:bg-content/5"
+          >
+            Backend API docs
+          </a>
+        </div>
       </section>
     </main>
   );
