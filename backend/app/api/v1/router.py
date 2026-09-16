@@ -5,8 +5,9 @@ See docs/PROJECT_ARCHITECTURE.md §4.
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import course_schemes, programs
+from app.api.v1.endpoints import course_schemes, dashboard, programs
 
 api_router = APIRouter()
 api_router.include_router(programs.router, tags=["programs"])
 api_router.include_router(course_schemes.router, tags=["course-schemes"])
+api_router.include_router(dashboard.router, tags=["dashboard"])
