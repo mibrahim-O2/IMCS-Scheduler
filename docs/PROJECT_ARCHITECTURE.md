@@ -410,6 +410,11 @@ chromosome/fitness function is wired in and passing its own tests.
 5. **No backend schema change is ever required for a new scheme year** —
    a new year is just a new `CourseScheme` row with its own `content` blob.
 
+**Confirmed starting point for Phase 2:** the `course_schemes` and `courses`
+tables exist from Phase 1 but are empty. Phase 2 populates **BSCS only, scheme
+year 2024** — the scheme we already hold the PDF for. Other programs and years
+follow once their documents are collected (§11.3).
+
 ---
 
 ## 8. Live Dashboard
@@ -497,9 +502,19 @@ Full source: `docs/color-palette.md`. Summary for implementers:
 
 ---
 
-## 13. Immediate Next Step
+## 13. Phase Status
 
-Minimal scaffold only (this phase): empty/starter FastAPI app with a health
-endpoint, empty/starter Next.js app with a homepage stub, correct folder
-structure per §4/§5, no models/GA/features implemented yet. Real
-implementation begins in a later, explicitly confirmed phase.
+- **Phase 0 — done.** FastAPI + Next.js scaffold with the folder structure in
+  §4/§5, a health endpoint and a homepage stub.
+- **Phase 1 — done.** SQLAlchemy models for Department, Program, Classroom,
+  Teacher, CourseScheme and Course; Alembic wired to the app settings and the
+  first migration applied to Supabase; the three departments and all their
+  program levels seeded (BS only is schedulable); `GET /api/v1/programs`
+  serving real data.
+- **Phase 2 — next.** Course Scheme management per §7 — upload, preview,
+  delete-with-warning — starting with **BSCS, scheme year 2024**.
+- **After Phase 2 — authentication.** Faculty-only sign-in via Google through
+  Supabase Auth; students read published timetables without logging in. No
+  auth fields exist on any model yet, by design.
+- **Later.** Division and Timetable models, then the GA engine (§6), the live
+  dashboard (§8) and export (§9).
