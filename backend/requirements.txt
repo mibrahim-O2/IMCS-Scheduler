@@ -9,8 +9,14 @@ sqlalchemy==2.0.54
 alembic==1.20.0
 psycopg[binary]==3.3.5
 
+# Phase 2: course scheme upload, extraction and storage
+python-multipart==0.0.32   # multipart file uploads
+pdfplumber==0.11.10        # PDF text-layer extraction
+python-docx==1.2.0         # Word (.docx) text extraction
+httpx==0.28.1              # Supabase Storage REST calls
+pytesseract==0.3.13        # OCR fallback for scanned PDFs (needs the Tesseract binary)
+pdf2image==1.17.0          # rasterizes PDF pages for OCR (needs poppler)
+
 # Later phases, uncomment when the phase that needs them begins
-# python-docx            # Word export (PROJECT_ARCHITECTURE.md §9)
-# python-multipart       # course scheme file uploads (§7)
 # pytest                 # scheduler and API tests
-# httpx                  # FastAPI TestClient dependency
+# reportlab              # PDF export (PROJECT_ARCHITECTURE.md §9)
