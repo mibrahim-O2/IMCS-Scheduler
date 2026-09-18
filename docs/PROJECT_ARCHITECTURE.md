@@ -521,10 +521,39 @@ Full source: `docs/color-palette.md`. Summary for implementers:
   first migration applied to Supabase; the three departments and all their
   program levels seeded (BS only is schedulable); `GET /api/v1/programs`
   serving real data.
-- **Phase 2 — next.** Course Scheme management per §7 — upload, preview,
-  delete-with-warning — starting with **BSCS, scheme year 2024**.
-- **After Phase 2 — authentication.** Faculty-only sign-in via Google through
-  Supabase Auth; students read published timetables without logging in. No
-  auth fields exist on any model yet, by design.
-- **Later.** Division and Timetable models, then the GA engine (§6), the live
-  dashboard (§8) and export (§9).
+- **Phase 2 — done.** Course Scheme management per §7 — upload, preview,
+  delete-with-warning — starting with **BSCS, scheme year 2024**, saved in
+  the database from the real university scheme document.
+- **Phase 3 — done.** Lab pairing fixed (a lab is `has_lab` + `lab_credit_hours`
+  on its theory course, never a course of its own), demo polish on the
+  Course Scheme flow, and a real-data stats overview page/endpoint
+  (`GET /api/v1/dashboard/stats` — counts only, not teacher/room
+  availability, which needs generated timetables).
+- **Phases 4-6 — done, standalone dev scripts only.** The GA in
+  `backend/app/scheduler/dev_scripts/` (`phase4_bscs_part1_ga.py`,
+  `phase5_multi_division_ga.py`, `phase6_full_bscs_morning_ga.py`) was
+  built and proven directly against real timetable data — one division,
+  then four, then all eight BSCS Morning divisions (Part-I through
+  Part-IV, PM/PE). **These scripts are not wired into the database, the
+  API, or the frontend** — they run standalone and print their result to
+  the terminal. See `docs/CONSTRAINTS.md` for the constraint list they
+  implement and `docs/PROJECT_AUDIT.md` for the full file map and
+  fragility notes.
+- **Reference data for GA development, from this cleanup phase onward:**
+  `docs/timetable.json` is now the source of truth for real
+  BSCS/BSAI Morning-shift timetable data used to build and test the GA —
+  course names, full teacher names, rooms, days, times and PM/PE sections
+  for every department/program, already resolved into one clean structured
+  file. It **replaces the manual PDF-extraction approach Phases 4-6 used**
+  (reading scanned timetable PDFs by hand and typing the data into each
+  dev script), which was error-prone — see the initials collisions found
+  in Phases 5-6 (e.g. `A.B` meant three different people on three
+  different sheets). This is a GA-development data source only; it is
+  unrelated to and does not change the Course Scheme upload feature (§7),
+  which still parses admin-uploaded PDF/Word files at runtime.
+- **After the GA is trusted:** wire it to the database (Division/Timetable
+  models), add generate/publish endpoints, build a frontend to trigger and
+  view a generated timetable, then authentication (faculty-only Google
+  sign-in via Supabase Auth; students read without logging in — no auth
+  fields exist on any model yet, by design), then the live dashboard (§8)
+  and export (§9).

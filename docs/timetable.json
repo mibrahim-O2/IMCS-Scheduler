@@ -1,0 +1,1622 @@
+{
+    "institution": "Institute of Mathematics & Computer Science, University of Sindh",
+    "semester": "2nd Semester 2026",
+    "effective_date": "17-08-2026",
+    "shift": "Morning",
+    "departments": [
+        {
+            "name": "Computer Science",
+            "programs": [
+                {
+                    "class": "BS(CS) Part-I",
+                    "classrooms": {
+                        "PM": "Room No: 01",
+                        "PE": "Room No: 02"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Islamic Studies",
+                            "section": "PE",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Expository Writing",
+                            "section": "PM",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Islamic Studies",
+                            "section": "PE",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Expository Writing",
+                            "section": "PM",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Mathematics-II",
+                            "section": "PM",
+                            "teacher": "Mr. M Rafiq Mallah",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "IOT",
+                            "section": "PE",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Mathematics-II",
+                            "section": "PM",
+                            "teacher": "Mr. M Rafiq Mallah",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "IOT",
+                            "section": "PE",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "History-II",
+                            "section": "PM/PE",
+                            "teacher": "Ms. Asma Mughal",
+                            "room": "Room No: 01/02"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "12.40 To 1.30",
+                            "subject": "History-II",
+                            "section": "PM/PE",
+                            "teacher": "Ms. Asma Mughal",
+                            "room": "Room No: 01/02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Islamic Studies",
+                            "section": "PM",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Expository Writing",
+                            "section": "PE",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Islamic Studies",
+                            "section": "PM",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Expository Writing",
+                            "section": "PE",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Object Oriented Programming",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "PE",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Object Oriented Programming",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Fida Chandio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "IOT",
+                            "section": "PM",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Object Oriented Programming",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Fida Chandio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "IOT",
+                            "section": "PM",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Ethics",
+                            "section": "PM/PE",
+                            "teacher": "Mr. Wajhat Hussain",
+                            "room": "Room No: 01/02"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Expository Writing",
+                            "section": "PE",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Digital Logic Design",
+                            "section": "PM",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Expository Writing",
+                            "section": "PM",
+                            "teacher": "Ms. Madhia Khemtio",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Digital Logic Design",
+                            "section": "PE",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "PE",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (OOP)",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Lab / Room No: 01"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Lab (OOP)",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Lab / Room No: 01"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Digital Logic Design",
+                            "section": "PM",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Digital Logic Design",
+                            "section": "PE",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Digital Logic Design",
+                            "section": "PM",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Digital Logic Design",
+                            "section": "PE",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Lab (DLD)",
+                            "section": "PM",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Lab / Room No: 01"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Lab (DLD)",
+                            "section": "PE",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Lab / Room No: 02"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Object Oriented Programming",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Fida Chandio",
+                            "room": "Room No: 02"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "IOT",
+                            "section": "PM",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Lab (OOP)",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Fida Chandio",
+                            "room": "Lab / Room No: 02"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (OOP)",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Fida Chandio",
+                            "room": "Lab / Room No: 02"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "PM",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "PM",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Object Oriented Programming",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 01"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Object Oriented Programming",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 01"
+                        }
+                    ]
+                },
+                {
+                    "class": "BS(CS) Part-II",
+                    "classrooms": {
+                        "PM": "Room No: 05",
+                        "PE": "Room No: 06"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Computer Architecture",
+                            "section": "PM",
+                            "teacher": "Mr. Abdul Rehman Nangraj",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Computer Architecture",
+                            "section": "PM",
+                            "teacher": "Mr. Abdul Rehman Nangraj",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Professional Practices",
+                            "section": "PE",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PM",
+                            "teacher": "Mr. Asad Ali Khore",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PE",
+                            "teacher": "Ms. Noor Ul Ain Soomro",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Entrepreneurship",
+                            "section": "PM",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Theory Of Automata",
+                            "section": "PE",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Entrepreneurship",
+                            "section": "PM",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Theory Of Automata",
+                            "section": "PE",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Computer Architecture",
+                            "section": "PM",
+                            "teacher": "Mr. Abdul Rehman Nangraj",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PM",
+                            "teacher": "Mr. Asad Ali Khore",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PE",
+                            "teacher": "Ms. Noor Ul Ain Soomro",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Theory Of Automata",
+                            "section": "PM",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Data Base System",
+                            "section": "PE",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (CA)",
+                            "section": "PM",
+                            "teacher": "Mr. Abdul Rehman Nangraj",
+                            "room": "Lab / Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (DBS)",
+                            "section": "PE",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Lab / Room No: 06"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Data Base System",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Computer Architecture",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (DBS)",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Lab / Room No: 05"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (CA)",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Lab / Room No: 06"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Professional Practices",
+                            "section": "PM",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PM",
+                            "teacher": "Mr. Asad Ali Khore",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "PE",
+                            "teacher": "Ms. Noor Ul Ain Soomro",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Theory Of Automata",
+                            "section": "PM",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Computer Architecture",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Theory Of Automata",
+                            "section": "PM",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Computer Architecture",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Professional Practices",
+                            "section": "PE",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Professional Practices",
+                            "section": "PM",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Entrepreneurship",
+                            "section": "PE",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Data Base System",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Entrepreneurship",
+                            "section": "PE",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Data Base System",
+                            "section": "PM",
+                            "teacher": "Dr. Gulsher Laghari",
+                            "room": "Room No: 05"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Data Base System",
+                            "section": "PE",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Data Base System",
+                            "section": "PE",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Room No: 06"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Theory Of Automata",
+                            "section": "PE",
+                            "teacher": "Mr. Fiaz Memon",
+                            "room": "Room No: 06"
+                        }
+                    ]
+                },
+                {
+                    "class": "BS(CS) Part-III",
+                    "classrooms": {
+                        "PM": "Room No: 03",
+                        "PE": "Room No: 04"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PM",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Computer Network",
+                            "section": "PE",
+                            "teacher": "Ms. Afia Bhutto",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PM",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Computer Network",
+                            "section": "PE",
+                            "teacher": "Ms. Afia Bhutto",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PM",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PE",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (HCICG)",
+                            "section": "PM",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Lab / Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (CN)",
+                            "section": "PE",
+                            "teacher": "Ms. Afia Bhutto",
+                            "room": "Lab / Room No: 04"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Computer Network",
+                            "section": "PM",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PE",
+                            "teacher": "Ms. Asia Soomro",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (CN)",
+                            "section": "PM",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Lab / Room No: 03"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (PDC)",
+                            "section": "PE",
+                            "teacher": "Ms. Asia Soomro",
+                            "room": "Lab / Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PM",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Computer Network",
+                            "section": "PE",
+                            "teacher": "Ms. Afia Bhutto",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PE",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PM",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Lab (PDC)",
+                            "section": "PM",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Lab / Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Analysis Of Algorithm",
+                            "section": "PE",
+                            "teacher": "Dr. Hira Fatima",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PM",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PE",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PM",
+                            "teacher": "Dr. Nazish Nawaz",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PE",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Multivariable Calculus",
+                            "section": "PM",
+                            "teacher": "Mr. Shahzaman Areejo",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Multivariable Calculus",
+                            "section": "PE",
+                            "teacher": "Mr. M. Rafiq Mallah",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "HCI & Computer Graphics",
+                            "section": "PE",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PM",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Lab (HCICG)",
+                            "section": "PE",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Lab / Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PM",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Computer Network",
+                            "section": "PM",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PE",
+                            "teacher": "Ms. Asia Soomro",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Computer Network",
+                            "section": "PM",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "PE",
+                            "teacher": "Ms. Asia Soomro",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Multivariable Calculus",
+                            "section": "PM",
+                            "teacher": "Mr. Shahzaman Areejo",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Multivariable Calculus",
+                            "section": "PE",
+                            "teacher": "Mr. M. Rafiq Mallah",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Multivariable Calculus",
+                            "section": "PM",
+                            "teacher": "Mr. Shahzaman Areejo",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Multivariable Calculus",
+                            "section": "PE",
+                            "teacher": "Mr. M. Rafiq Mallah",
+                            "room": "Room No: 04"
+                        }
+                    ]
+                },
+                {
+                    "class": "BS(CS) Part-IV",
+                    "classrooms": {
+                        "PM": "Room No: 03",
+                        "PE": "Room No: 04"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "E-Commerce",
+                            "section": "PM",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "E-Commerce",
+                            "section": "PE",
+                            "teacher": "Mr. Zohaib Maqsood",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "E-Commerce",
+                            "section": "PM",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "E-Commerce",
+                            "section": "PE",
+                            "teacher": "Mr. Zohaib Maqsood",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Mobile Application Development",
+                            "section": "PM",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Speech Processing",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Mobile Application Development",
+                            "section": "PM",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Speech Processing",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Mobile Application Development",
+                            "section": "PE",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Speech Processing",
+                            "section": "PM",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "8.30 To 9.20",
+                            "subject": "E-Commerce",
+                            "section": "PM",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "8.30 To 9.20",
+                            "subject": "E-Commerce",
+                            "section": "PE",
+                            "teacher": "Mr. Zohaib Maqsood",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Mobile Application Development",
+                            "section": "PM",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Speech Processing",
+                            "section": "PE",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Mobile Application Development",
+                            "section": "PE",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Speech Processing",
+                            "section": "PM",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 03"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Mobile Application Development",
+                            "section": "PE",
+                            "teacher": "Mr. Kamran Brohi",
+                            "room": "Room No: 04"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Speech Processing",
+                            "section": "PM",
+                            "teacher": "Prof. Dr. Ayaz Keerio",
+                            "room": "Room No: 03"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Artificial Intelligence",
+            "programs": [
+                {
+                    "class": "BS(AI) Part-I",
+                    "classrooms": {
+                        "General": "Room No: 07"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Mathematics-II",
+                            "section": "PM",
+                            "teacher": "Ms. Damiya Khowaja",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "IOT",
+                            "section": "General",
+                            "teacher": "Dr. Kulsoom Bughio / Ms. Safiya Shaikh",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "IOT",
+                            "section": "General",
+                            "teacher": "Dr. Kulsoom Bughio / Ms. Safiya Shaikh",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "History-II",
+                            "section": "General",
+                            "teacher": "Ms. Asma Mughal",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "12.40 To 1.30",
+                            "subject": "History-II",
+                            "section": "General",
+                            "teacher": "Ms. Asma Mughal",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Mathematics-II",
+                            "section": "PM",
+                            "teacher": "Ms. Damiya Khowaja",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Digital Logic Design",
+                            "section": "General",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "IOT",
+                            "section": "General",
+                            "teacher": "Dr. Kulsoom Bughio / Ms. Safiya Shaikh",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Object Oriented Programming",
+                            "section": "General",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Object Oriented Programming",
+                            "section": "General",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Ethics",
+                            "section": "PM/PE",
+                            "teacher": "Mr. Wajhat Hussain",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Islamic Studies",
+                            "section": "General",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Islamic Studies",
+                            "section": "General",
+                            "teacher": "Dr. Hameedullah Bhutto",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Expository Writing",
+                            "section": "General",
+                            "teacher": "Mr. Noman Zafar Jatoi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Object Oriented Programming",
+                            "section": "General",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Lab (OOP)",
+                            "section": "General",
+                            "teacher": "Mr. Gulzar Brohi",
+                            "room": "Lab / Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "General",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Understanding Holy Quran-II",
+                            "section": "General",
+                            "teacher": "Mr. Ahmed Raza Chandio",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Expository Writing",
+                            "section": "General",
+                            "teacher": "Mr. Noman Zafar Jatoi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Expository Writing",
+                            "section": "General",
+                            "teacher": "Mr. Noman Zafar Jatoi",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Digital Logic Design",
+                            "section": "General",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Digital Logic Design",
+                            "section": "General",
+                            "teacher": "Dr. Abdul Rehman Nangraj",
+                            "room": "Room No: 07"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Mathematics-II",
+                            "section": "PM",
+                            "teacher": "Ms. Damiya Khowaja",
+                            "room": "Room No: 07"
+                        }
+                    ]
+                },
+                {
+                    "class": "BS(AI) Part-II",
+                    "classrooms": {
+                        "General": "Hall-3 (First Floor)"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Monday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Professional Practices",
+                            "section": "General",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Data Base System",
+                            "section": "General",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Data Base System",
+                            "section": "General",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Programming For AI",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Monday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Lab (Programming For AI)",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Lab / Hall-3"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Professional Practices",
+                            "section": "General",
+                            "teacher": "Mr. Adil Bhatti",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Farhat Naureen Memon",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Farhat Naureen Memon",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Entrepreneurship",
+                            "section": "General",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Entrepreneurship",
+                            "section": "General",
+                            "teacher": "Dr. Shahmurad Chandio",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Quantitative Reasoning-II",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Farhat Naureen Memon",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Machine Learning",
+                            "section": "General",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Machine Learning",
+                            "section": "General",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Lab (DBS)",
+                            "section": "General",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Lab / Hall-3"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Data Base System",
+                            "section": "General",
+                            "teacher": "Dr. Asad Buledi",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Programming For AI",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Programming For AI",
+                            "section": "General",
+                            "teacher": "Prof. Dr. Imtiaz Korejo",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Machine Learning",
+                            "section": "General",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Hall-3 (First Floor)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "12.40 To 1.30",
+                            "subject": "Lab (Machine Learning)",
+                            "section": "General",
+                            "teacher": "Dr. Aftab Chandio",
+                            "room": "Lab / Hall-3"
+                        }
+                    ]
+                },
+                {
+                    "class": "BS(AI) Part-III",
+                    "classrooms": {
+                        "General": "Room No: 09 (OGH)"
+                    },
+                    "schedule": [
+                        {
+                            "day": "Tuesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Multivariable Calculus",
+                            "section": "General",
+                            "teacher": "Mr. Irfan Jatoi",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Multivariable Calculus",
+                            "section": "General",
+                            "teacher": "Mr. Irfan Jatoi",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Natural Language Processing",
+                            "section": "General",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Computer Network",
+                            "section": "General",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Lab (CN)",
+                            "section": "General",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Lab / Room No: 09"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Computer Vision",
+                            "section": "General",
+                            "teacher": "Mr. Zubair Kandhro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Computer Vision",
+                            "section": "General",
+                            "teacher": "Mr. Zubair Kandhro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Computer Network",
+                            "section": "General",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Computer Network",
+                            "section": "General",
+                            "teacher": "Dr. Altaf Abro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "General",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Lab (PDC)",
+                            "section": "General",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Lab / Room No: 09"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Natural Language Processing",
+                            "section": "General",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Multivariable Calculus",
+                            "section": "General",
+                            "teacher": "Mr. Irfan Jatoi",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Thursday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Lab (NLP)",
+                            "section": "General",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Lab / Room No: 09"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "8.30 To 9.20",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "General",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "9.20 To 10.10",
+                            "subject": "Parallel & Distributed Computing",
+                            "section": "General",
+                            "teacher": "Dr. Shazia Samoon",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "10.10 To 11.00",
+                            "subject": "Computer Vision",
+                            "section": "General",
+                            "teacher": "Mr. Zubair Kandhro",
+                            "room": "Room No: 09 (OGH)"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "11.00 To 11.50",
+                            "subject": "Lab (Computer Vision)",
+                            "section": "General",
+                            "teacher": "Mr. Zubair Kandhro",
+                            "room": "Lab / Room No: 09"
+                        },
+                        {
+                            "day": "Friday",
+                            "time": "11.50 To 12.40",
+                            "subject": "Natural Language Processing",
+                            "section": "General",
+                            "teacher": "Mr. Rajesh Kumar",
+                            "room": "Room No: 09 (OGH)"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
