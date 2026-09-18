@@ -39,7 +39,7 @@ see §3.1.
 | Layer | Choice | Why |
 |---|---|---|
 | Backend | Python 3.11+, FastAPI | Async, typed, clean separation of routes vs. logic |
-| Scheduling engine | Pure Python (DEAP-style custom GA, no framework lock-in) | Full control over chromosome/fitness design |
+| Scheduling engine | Pure Python custom Genetic Algorithm (DEAP-style, no framework lock-in) — the sole, permanent scheduling approach; no OR-Tools/CP-SAT hybrid, see §6 | Full control over chromosome/fitness design |
 | Database | PostgreSQL | Core entities (Program, Division, Classroom, Teacher, Course, Timetable) are relational — FKs, joins, and referential integrity (e.g. blocking scheme deletion when referenced) matter here |
 | Flexible data | JSONB column on a `course_schemes` table | Each scheme year's subject list varies in shape; JSONB avoids a migration per new scheme year while keeping it inside the relational DB (no second datastore to sync) |
 | ORM | SQLAlchemy 2.0 + Alembic | Typed models, migrations for the relational core (schemes stay migration-free via JSONB) |
@@ -345,6 +345,13 @@ timetable route behind it. See §3.1.
 
 ## 6. Genetic Algorithm Design
 
+**Genetic Algorithm is the sole, permanent scheduling approach for this
+project.** This was evaluated and decided early on and is not revisited: no
+OR-Tools, no CP-SAT, no constraint-programming solver, and no "GA now,
+hybridize later" plan. Everything in this section, and everything built in
+`scheduler/dev_scripts/` (Phases 4-6, see `docs/CONSTRAINTS.md`), assumes
+pure GA end to end.
+
 ### 6.1 Chromosome
 One chromosome = one full candidate `Timetable` for a given Division.
 Each **gene** = one session assignment:
@@ -500,8 +507,6 @@ Full source: `docs/color-palette.md`. Summary for implementers:
 - Faculty leave/substitute suggestions, room/resource inventory, RBAC,
   notifications, audit logs, utilization reports.
 - Any RAG-based chatbot for live schedule data (see §8).
-- Hybrid GA + OR-Tools CP-SAT — noted as a possible future upgrade if pure
-  GA convergence proves too slow, not part of the current build.
 - Divisions, Course Schemes and Timetables for non-BS program levels. Those
   levels are modeled and listed only; scheduling them is future work (§3.1).
 
