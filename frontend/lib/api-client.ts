@@ -2,7 +2,19 @@
  * Typed fetch wrapper for the FastAPI backend (docs/PROJECT_ARCHITECTURE.md §5).
  */
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Explicit override wins. Otherwise, on the client, reuse whatever host the page itself
+// was loaded from (with the backend's port) — so a phone that opened the frontend at
+// http://192.168.x.x:3000 over the LAN also calls the backend at that same LAN address
+// instead of "localhost", which on the phone would mean itself, not the laptop. Only
+// falls back to a literal localhost during server-side rendering, where there's no
+// browser location to read from.
+function resolveApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined") return `http://${window.location.hostname}:8000`;
+  return "http://localhost:8000";
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export function errorMessage(cause: unknown): string {
   // Turns whatever was thrown into text that can be shown to the user.
