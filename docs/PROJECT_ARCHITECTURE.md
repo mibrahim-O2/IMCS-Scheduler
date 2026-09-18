@@ -275,8 +275,7 @@ backend/
 │   │   │   ├── hard.py             # teacher clash, room clash, cross-part clash
 │   │   │   └── soft.py             # preference misses, load balance, gaps
 │   │   ├── operators.py           # selection, crossover, mutation
-│   │   ├── engine.py              # the generation loop (population -> iterate -> result)
-│   │   └── onemax_sanity_check.py # scaffolding-only GA machinery test
+│   │   └── engine.py              # the generation loop (population -> iterate -> result)
 │   ├── api/
 │   │   └── v1/
 │   │       ├── router.py          # aggregates all endpoint routers
@@ -383,13 +382,19 @@ Mutation   -> re-roll one gene's (room, day, start_time) — never re-roll
 Iterate    -> until fitness plateau or max_generations reached
 ```
 
-### 6.4 Sanity Check First
-`scheduler/onemax_sanity_check.py` implements the classic One Max problem
-(evolve a random bit-string to all 1s) purely to prove the
-selection/crossover/mutation loop in `operators.py` is mechanically correct,
-in isolation from the timetabling domain. This file is scaffolding, not a
-feature, and is expected to be deleted or moved to `tests/` once the real
-chromosome/fitness function is wired in and passing its own tests.
+### 6.4 How the GA loop was actually validated
+The original plan was a One Max bit-string sanity check before touching the
+real chromosome. That step was skipped: Phases 4-6
+(`scheduler/dev_scripts/phase4_bscs_part1_ga.py`,
+`phase5_multi_division_ga.py`, `phase6_full_bscs_morning_ga.py`) went
+straight to the real timetable chromosome and fitness function on real
+department data, and validated selection/crossover/mutation by running the
+GA to convergence (0 hard violations) across 10+ seeds per phase, plus a
+deliberate "break one rule, confirm the detector fires" test per constraint.
+That proved the loop mechanically works without a separate toy problem. See
+`docs/CONSTRAINTS.md` for the constraint list these dev scripts implement
+and verify, and `docs/PROJECT_AUDIT.md` for what is proven versus still
+fragile.
 
 ---
 

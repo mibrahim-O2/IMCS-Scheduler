@@ -77,10 +77,10 @@ the final codebase — no disposable/throwaway scaffolding.
   is unavailable at a given slot, the algorithm assigns another slot rather
   than forcing a template. Each teacher's own stated availability is an input
   constraint, not something the system overrides.
-- Start with a minimal **One Max sanity-check** (a classic simple bit-string
-  GA test) purely to confirm the selection/crossover/mutation loop is
-  implemented correctly, before wiring in the real timetable chromosome and
-  fitness function. This is a scaffolding step, not a feature.
+- The selection/crossover/mutation loop was validated directly on the real
+  timetable chromosome and real department data (Phases 4-6, see
+  `docs/CONSTRAINTS.md` and `docs/PROJECT_AUDIT.md`), not via a separate
+  toy sanity-check problem.
 
 ## Architecture & Code Rules
 1. Keep the GA engine (`scheduler`/`ga_engine` module) isolated from the API
