@@ -20,7 +20,7 @@ from typing import NamedTuple
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Division, DivisionCourse
+from app.models import Classroom, ClassroomType, Division, DivisionCourse
 
 DAYS: tuple[str, ...] = ("Mon", "Tue", "Wed", "Thu", "Fri")
 
@@ -71,7 +71,6 @@ class DivisionInfo:
     id: int
     label: str
     home_room_id: int | None
-    lab_room_id: int | None
 
 
 def load_divisions(session: Session, division_ids: list[int]) -> dict[int, DivisionInfo]:
@@ -81,7 +80,15 @@ def load_divisions(session: Session, division_ids: list[int]) -> dict[int, Divis
     missing = set(division_ids) - found
     if missing:
         raise ValueError(f"Division id(s) not found: {sorted(missing)}")
-    return {row.id: DivisionInfo(row.id, row.label, row.home_room_id, row.lab_room_id) for row in rows}
+    return {row.id: DivisionInfo(row.id, row.label, row.home_room_id) for row in rows}
+
+
+def load_lab_room_ids(session: Session) -> tuple[int, ...]:
+    # The department's shared lab rooms (Lab A-E). Labs aren't tied to a division: any lab
+    # session may use any of them, and the room-clash rule is what keeps two sessions out
+    # of the same lab at the same time.
+    rows = session.scalars(select(Classroom.id).where(Classroom.type == ClassroomType.LAB).order_by(Classroom.name))
+    return tuple(rows)
 
 
 def build_session_requirements(session: Session, division_ids: list[int]) -> list[SessionRequirement]:
@@ -89,6 +96,7 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
     # theory sessions (and lab sessions, where the assignment has one) it needs — this
     # is the real, seeded equivalent of the dev scripts' hand-typed PDF_SESSIONS tuples.
     divisions = load_divisions(session, division_ids)
+    lab_room_ids = load_lab_room_ids(session)
     assignments = session.scalars(
         select(DivisionCourse).where(DivisionCourse.division_id.in_(division_ids))
     ).all()
@@ -119,8 +127,8 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
             )
 
         if assignment.has_lab and assignment.lab_teacher_id and assignment.weekly_lab_periods:
-            if division.lab_room_id is None:
-                raise ValueError(f"{division.label} has a lab course but no lab_room_id set.")
+            if not lab_room_ids:
+                raise ValueError(f"{division.label} has a lab course but no lab rooms exist — re-run the seed.")
             for _ in range(assignment.weekly_lab_periods):
                 requirements.append(
                     SessionRequirement(
@@ -129,7 +137,7 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
                         teacher_id=assignment.lab_teacher_id,
                         division_ids=(assignment.division_id,),  # labs are never joint in this data
                         is_lab=True,
-                        candidate_rooms=(division.lab_room_id,),
+                        candidate_rooms=lab_room_ids,
                     )
                 )
 

@@ -139,8 +139,10 @@ def division_double_booked(
 def lab_session_rules(
     chromosome: Chromosome, requirements: list[SessionRequirement], divisions: dict[int, DivisionInfo]
 ) -> list[Violation]:
-    # A lab sits in its division's lab room, never its lecture room, and never on top of
-    # that same course's own theory session for the same division.
+    # A lab never lands on top of that same course's own theory session for the same
+    # division. Which room a lab uses isn't checked here: a lab session can only ever be
+    # placed in the shared lab pool (Lab A-E, see chromosome.py), and two labs in the same
+    # lab at the same time is room_double_booked's job.
     violations = []
     theory_slots: dict[tuple[int, int], set[tuple[str, int]]] = defaultdict(set)
     for gene, requirement in zip(chromosome, requirements, strict=True):
