@@ -1,7 +1,7 @@
 # IMCS Scheduler — Project Audit
 
-**Snapshot date:** 2026-09-19, at the end of Phase 8 — full 8-division GA
-convergence. Phase 7 wired the real GA end to end (database models, seed data
+**Snapshot date:** 2026-09-19, at the end of Phase 8.1 (lab room identity fixed to the
+five real labs, Lab A-E) on top of Phase 8 — full 8-division GA convergence. Phase 7 wired the real GA end to end (database models, seed data
 from `docs/timetable.json`, the production scheduler package with all 9 hard
 constraints, the `/api/v1/timetables` endpoints, a real frontend page) but the
 full BSCS Part-I to Part-IV problem stalled 1-20 violations short of zero.
@@ -33,8 +33,10 @@ backend/
 │   └── versions/
 │       ├── ef3f9e008a22_..._classroom_.py   real — departments, programs, classrooms, teachers,
 │       │                                       course_schemes, courses.
-│       └── 722044599067_..._lab_....py      real (Phase 7) — divisions, division_courses, lab_batches,
-│                                              timetables, timetable_sessions.
+│       ├── 722044599067_..._lab_....py      real (Phase 7) — divisions, division_courses, lab_batches,
+│       │                                       timetables, timetable_sessions.
+│       └── 2ef363712bc6_drop_division_lab_room_id_...py   real (Phase 8.1) — drops divisions.lab_room_id
+│                                              (labs are a shared pool, not per-division)
 ├── requirements.txt                      real — pinned deps (fastapi, sqlalchemy, alembic, psycopg,
 │                                            pdfplumber, python-docx, httpx, pytesseract, pdf2image)
 ├── app/
@@ -46,9 +48,11 @@ backend/
 │   │   ├── base.py                       real — SQLAlchemy declarative base + TimestampMixin
 │   │   ├── session.py                    real — engine/session factory, get_db dependency
 │   │   ├── seed.py                       real — seeds the 3 departments + 18 programs (idempotent)
-│   │   ├── seed_bscs_timetable.py        real (Phase 7) — reads docs/timetable.json and creates real
-│   │   │                                    Teacher/Classroom/Division/DivisionCourse rows for BSCS
-│   │   │                                    Part-I to Part-IV, Morning shift (idempotent)
+│   │   ├── seed_bscs_timetable.py        real (Phase 7, fixed Phase 8.1) — reads docs/timetable.json and
+│   │   │                                    creates real Teacher / lecture Classroom / Division /
+│   │   │                                    DivisionCourse rows for BSCS Part-I to Part-IV, Morning shift,
+│   │   │                                    plus the five shared labs Lab A-E (idempotent); also clears the
+│   │   │                                    old placeholder "Room NN (Lab)" rooms
 │   │   └── rematerialize.py              real — rebuilds Course rows from a scheme's stored content
 │   ├── models/
 │   │   ├── program.py                    real — Department, Program, ProgramLevel enum
@@ -158,6 +162,7 @@ including from a phone over the real local network, not just localhost.
 | This cleanup | Removed One Max scaffolding and OR-Tools/hybrid references; adopted `docs/timetable.json` as GA reference data; documented all 9 constraints in `docs/CONSTRAINTS.md`; full regression test of everything above; this audit | Done |
 | 7 | Real GA integration: Division/Timetable DB models + migration, seed from `docs/timetable.json`, production scheduler package (all 9 hard constraints, lazy violation messages, stagnation detection + restarts), `/api/v1/timetables` endpoints, `/timetables` frontend page, tested end to end incl. over LAN from a phone | Done — see §4, §8 for honest results at full scale |
 | 8 | Full 8-division convergence: greedy constructive seeding for half of every fresh population (Technique 1 of 3; Techniques 2-3 deliberately not needed). Full BSCS problem 100/100 converged at generation 1 | Done — see §4, §11 |
+| 8.1 | Lab room identity: the department's five real labs (Lab A-E, shared by every division) replace six invented "Room NN (Lab)" rooms; labs are a shared pool the GA assigns per session; stale timetables removed. Convergence unchanged (100/100, generation 1) | Done — see §4, §12 |
 
 ---
 
@@ -171,19 +176,19 @@ Phases 7-8:
 |---|---|---|
 | `departments` | 3 | Computer Science, Artificial Intelligence, Mathematics |
 | `programs` | 18 | All levels for all 3 departments; 3 are `is_schedulable=true` (the BS programs) |
-| `classrooms` | 12 | Real lecture + lab rooms for BSCS Part-I to Part-IV, from `docs/timetable.json` |
+| `classrooms` | 11 | 6 lecture rooms (Room 01-06, from `docs/timetable.json`) + the 5 real labs **Lab A, Lab B, Lab C, Lab D, Lab E** (type `lab`, shared by every division — confirmed by the department, not read from the JSON). Phase 7-8 had 12: six of them were invented "Room NN (Lab)" rows, removed in Phase 8.1 |
 | `teachers` | 29 | Real full names, `availability.days` derived from actual teaching days in the JSON |
 | `course_schemes` | 2 (1 active) | The original BSCS 2024 upload (active, 45 courses), plus a synthetic `scheme_year=2026, is_active=false` scheme that exists only to hold real-timetable-derived Course rows (kept out of the Course Scheme upload UI on purpose — that UI is for official documents) |
 | `courses` | 68 | 45 from the 2024 scheme (unchanged) + 23 from the synthetic scheme |
 | `divisions` | 8 | BSCS Part-I to Part-IV, Morning shift, PM/PE split each |
 | `division_courses` | 43 | Real course/teacher assignments per division, incl. joint PM/PE subjects |
-| `timetables` | 7 | All draft, all converged. #1-2 are from Phase 7 and #3-6 were created between sessions, all 2-division (BSCS Part-I) runs; **#7 is the full 8-division BSCS Part-I to Part-IV timetable, generated through the real API in Phase 8** |
-| `timetable_sessions` | 384 | 6 x 42 (the 2-division runs) + 132 (the full run, #7) |
+| `timetables` | 1 | **#17**: a full 8-division BSCS Part-I to Part-IV draft, converged, generated through the real API in Phase 8.1 with the corrected labs. The seven older timetables (#1-7) placed labs in the invented rooms and were deleted as stale test data (§12) |
+| `timetable_sessions` | 132 | All belonging to #17 |
 
-**Timetable #7 is independently verified** (Phase 8, §11): its 132 saved rows were
-re-checked by code that shares nothing with the scheduler — zero rule violations,
-and all 59 (part, section, subject, lab?) groups match `docs/timetable.json` in
-session count and teacher.
+**Timetable #17 is independently verified** (Phase 8.1, §12): its 132 saved rows
+were re-checked by code that shares nothing with the scheduler — zero rule
+violations, labs only in Lab A-E, and all 59 (part, section, subject, lab?)
+groups match `docs/timetable.json` in session count and teacher.
 
 ---
 
@@ -239,16 +244,18 @@ generations, exactly its Phase 7 number, and all 8 tried seeds converge.
 
 ### What's still fragile — read this before trusting a timetable
 
-- **A lecture room and its lab can be the same physical room (open, real,
-  found in Phase 8).** The seed stores "Room 03" and "Room 03 (Lab)" as two
-  separate rooms, so the room-clash rule never compares them. `docs/timetable.json`
-  writes lab rooms as "Lab / Room No: 03", so they may well be one physical
-  room. Measured: the real timetable has **0** overlaps between a lab and a
-  same-numbered lecture room; the GA's timetables have at least one in **91 of
-  100** runs (159 in total). "Zero violations" is true against the 9 defined
-  constraints but would be optimistic if these are one room. Enforcing it
-  costs nothing in convergence (scratch test, 20/20 at generation 1). It needs
-  a department answer, then a small modelling change — see §9.
+- **Resolved in Phase 8.1: lab rooms.** Phase 8 found that the seed modelled
+  "Room 03" and a placeholder "Room 03 (Lab)" as two rooms, so 91 of 100
+  generated timetables had a lab and a same-numbered lecture room in use at
+  the same time (a clash, had they been one room). The real labs are five shared rooms, Lab A-E; the placeholders are
+  gone and every lab session now chooses among the real five, so the room-clash
+  rule compares real identities. **What is still only inferred, not sourced:**
+  `docs/timetable.json` never says which physical lab a session uses (it writes
+  "Lab / Room No: 01".."06", numbered like the lecture rooms), so the lab shown
+  for any generated session is the GA's choice, not a fact from the department's
+  timetable. Any of the five is treated as interchangeable (same capacity and
+  equipment) — that came from the department and hasn't been tested against a
+  session that needs a particular lab.
 - **The evolutionary loop is no longer exercised on this data.** Everything
   converges at generation 1, from the greedy seeder alone, so the crossover /
   mutation / restart machinery is now a safety net rather than the workhorse.
@@ -375,8 +382,6 @@ only through the production package.
   non-converged run is saved honestly as a draft with its conflicts listed, but
   the conflicts are raw ids and the search can run ~10 minutes before giving
   up. Worth building before any harder dataset (BS(AI), Evening) is attempted.
-- **Deciding whether a lecture room and its lab are one physical room** — see
-  §4 and §9.
 - **`LabBatch` rows** — the model exists (`app/models/division.py`) but the
   Phase 7 seed does not populate it; lab sessions are scheduled per-division
   as a whole, not split into sub-batches.
@@ -484,8 +489,8 @@ department/supervisor answer at some point.
 - **`R.K` teaching E.C(PM) on Part-IV isn't in the Part-IV legend** (Phase
   6): resolved to Mr. Rajesh Kumar by cross-referencing the Part-III
   legend, not confirmed independently.
-- **Lab rooms were an assumption in Phases 4-6** — superseded: `docs/timetable.json`
-  names a room for every lab row and the Phase 7 seed uses them (see the next bullet).
+- **Lab rooms were an assumption in Phases 4-6** — superseded by Phase 8.1: the labs are the five real
+  rooms Lab A-E (see the lab-identity bullet below).
 - **Two people with nearly identical surnames on different sheets** (Phase
   6): "Dr. Hameedullah Bhutto" (Part-I) and "Mr. Hammad Bhutto" (Part-III)
   are different people who share initials (`H.B`) and a surname — the kind
@@ -508,17 +513,14 @@ department/supervisor answer at some point.
 - **Deleting and re-uploading a Course Scheme leaves the old PDF in Supabase
   Storage** (noted in Phase 3) — nothing currently cleans up an orphaned
   stored file when a scheme is replaced. Minor, not urgent, but real.
-- **Is "Room NN" the same physical room as "Lab / Room No: NN"?** (Phase 8)
-  The seed models them as two rooms, so the GA can put a lab and a lecture in
-  "the same room" at the same time (91 of 100 generated timetables do; the real
-  timetable never does). If they are one room, the room-clash rule needs to
-  treat them as one — a small change that costs nothing in convergence (§4) but
-  changes what "room" means, so it wants a department answer first.
-- **Lab rooms are no longer a guess, but their identity is** (corrects two
-  earlier bullets). Phases 4-6 invented a lab pool and Phase 7's note here said
-  the JSON doesn't name lab rooms. It does: every lab row has one ("Lab / Room
-  No: 01"; Part-IV has no labs), and the seed uses them as given. What's
-  unresolved is the question above, not where labs go.
+- **Lab identity is only partly resolved** (Phase 8.1, replaces two earlier
+  lab bullets). Resolved: the department has exactly five labs, Lab A-E, shared
+  by all BSCS Parts, and they are separate from the lecture rooms — the old
+  "is Room 03 the same room as its lab?" question no longer applies. Still open:
+  which lab each real session uses. `docs/timetable.json` doesn't say, so it
+  can't be reproduced or checked; the real schedule needs at most 2 labs at
+  once, so five is plenty, but a real lab assignment (if the department has
+  one) should replace the GA's choice before timetables are used for booking.
 
 ---
 
@@ -682,3 +684,69 @@ Test timetables created by this phase's API/UI calls (#8-16) were deleted; #7,
 the independently verified full 8-division run, is kept. Timetables #3-6 were
 created between sessions by something other than these tests and were left
 alone. Final state: 7 timetables, 384 sessions (6 x 42 + 132).
+*(Phase 8.1 later deleted all of these timetables — they placed labs in rooms that don't exist — and
+generated #17 to replace them; see §12.)*
+
+---
+
+## 12. Phase 8.1 testing — lab room identity
+
+Run 2026-09-19 against the live Supabase database.
+
+### What `docs/timetable.json` says about labs (checked, not assumed)
+
+The file has 16 lab rows for BS(CS) (Part-I 6, Part-II 4, Part-III 6, Part-IV 0). Their
+`room` field is one of six strings, `"Lab / Room No: 01"` .. `"Lab / Room No: 06"`. The names
+**Lab A-E do not appear anywhere in the file**, and the strings follow the *lecture* room
+numbering (Part-I PM lecture "Room No: 01", its lab "Lab / Room No: 01"), so they do not identify
+one of the five real labs. The file was left untouched (it is the fixed reference export). Its only
+use for labs is "this is a lab session, on this day and time".
+
+Consequence: **which of Lab A-E a session uses is inferred, never sourced.** The GA picks it,
+avoiding clashes. To show the real schedule is feasible with five labs, its 16 lab sessions were
+mapped onto Lab A-E by first-free clash avoidance: at most **2** labs are ever in use at the same
+time in the real timetable (e.g. Thu 10:10, Part-I PM and PE both have a DLD lab), so five is ample.
+That mapping is only an illustration; nothing is stored from it.
+
+### Database changes
+
+| What | Before | After |
+|---|---|---|
+| Classroom rows | 12: Room 01-06 (lecture) + 6 invented "Room 01/02/03/04/05/06 (Lab)" | **11: Room 01-06 (lecture) + Lab A, Lab B, Lab C, Lab D, Lab E (all type `lab`)** |
+| `divisions.lab_room_id` | each division pinned to one lab room | column dropped (migration `2ef363712bc6`, round-tripped up/down/up) |
+| Lab candidate rooms in the GA | 1 per lab session (its division's lab) | all 5 labs, for every lab session |
+| Timetables referencing the fake rooms | 7 (#1-7, all drafts; 52 lab sessions sat in fake rooms) | **all 7 deleted as stale test data** (6 rooms, 7 timetables, 384 sessions), no dangling references; replaced by #17 |
+
+The cleanup lives in the seed (`remove_placeholder_lab_rooms`) and refuses to delete a timetable
+that is not a draft. #3-6 had been created between sessions by something other than my tests;
+they were among the seven because they referenced the fake rooms too, so they could not be kept.
+Seed run twice after the fix: identical output, second run had nothing to remove.
+
+### Test results
+
+| # | What was run | Result |
+|---|---|---|
+| 1 | Seed idempotency, run 2x (a third run was needed: the second lost its database connection mid-run — infrastructure, and nothing was half-written since the seed commits once) | identical: divisions 8, division_courses 43, teachers 29, classrooms 11, courses 23; rooms Room 01-06 [lecture], Lab A-E [lab] |
+| 2 | **Convergence, full 8-division, 100 seeds** (engine run) | **100/100 converged, all at generation 1**, mean **0.52s**, max 0.70s, 100/100 distinct timetables. (Phase 8 with the old rooms: mean 0.35s, max 0.61s) |
+| 3 | Convergence, 4-division (78 sessions), 100 seeds | 100/100, generation 1, mean 0.33s |
+| 4 | Convergence, 2-division (42 sessions), 100 seeds | 100/100, generation 1, mean 0.18s |
+| 5 | **Real API**: `POST /api/v1/timetables/generate` `{}` (all 8 divisions) | 201, timetable #17, converged, generation 1, 0.62s of search, 132 sessions, conflict_list [] |
+| 6 | **Independent checker on #17** (reads the DB rows, no scheduler imports) | teacher/room/division double-booking 0, teacher >3/day 0, same subject >2/day 0, availability OK; **every lab is in one of Lab A-E, every theory session in its own division's lecture room**; labs used: Lab A 3, B 4, C 3, D 4, E 2; **all 59 groups match `docs/timetable.json`, 0 mismatches** |
+| 7 | Negative test of the checker (corrupt rows in memory, incl. a lab moved into "Room 01") | 6 problems reported, including "lab session in 'Room 01', which is not one of the real labs" |
+| 8 | **Room-clash proof on the real labs**: force two lab sessions into the SAME lab at the same day+slot | **DETECTED**: "Room 16 is double-booked on Thu 11:00-11:50" (room 16 = Lab B, one of the five, ids 15-19) |
+| 9 | Converse: two lab sessions at the same time in DIFFERENT labs | correctly **not** flagged (0 room clashes) — the point of having five labs |
+| 10 | All 9 constraints, deliberately broken one by one on a converged full timetable | **all 9 detectors fire** (teacher, room, availability, lab-vs-own-theory, division, cross-division teacher (divisions 1 vs 3), same-subject spread, teacher daily load, one-subject-per-teacher) |
+| 11 | Real UI: click **Generate BSCS timetable** at 1280x900 and 390x844 | "converged in 1 generations, 132 sessions placed in 1s", 8 division tables, no conflict alert, 0 console errors, no overflow; labs show as Lab A-E in the Room column |
+| 12 | `ruff` (F,E,W,UP,SIM,B) on the touched backend; AST comment audit of the seed, chromosome and hard.py | clean; every function has its comment |
+
+### Did the five real labs make the problem harder?
+
+Barely. Convergence is unchanged (100/100 at generation 1). Per-run search time rose about 50%
+(0.35s -> 0.52s mean) because each lab session now has 5 rooms to choose among instead of 1; that
+is cost, not difficulty. The extra room freedom for labs helps more than the shared-room rule hurts:
+the real schedule never needs more than 2 labs at once, and the search has 5.
+
+### Bookkeeping
+
+The UI test created two more timetables; both were deleted, keeping only #17. State now:
+1 timetable, 132 sessions, 11 classrooms.

@@ -66,11 +66,14 @@ theory session.** For example, "Object Oriented Programming" (theory) and
 "Object Oriented Programming (LAB)" are two different sessions that must sit
 at two different times, and the lab one has to be in a computer lab.
 *Decided: Phase 4.*
-*Implementation note (Phase 7): "a room actually suited for a lab" is enforced
-by construction, not by a detector — a lab session's only candidate room is its
-division's own lab room, so the search can't put it anywhere else. The
-`lab_session_rules` detector itself checks the remaining half: the lab never
-lands on the same slot as its own subject's theory session.*
+*Implementation note (Phase 7, corrected Phase 8.1): "a room actually suited for
+a lab" is enforced by construction, not by a detector — a lab session's only
+candidate rooms are the department's five real labs (Lab A, B, C, D, E), shared
+by every division, so the search can't put a lab anywhere else. Two labs in the
+same lab at the same time is caught by constraint 2 (room double-booking), which
+now compares real lab identities. The `lab_session_rules` detector itself checks
+the remaining half: the lab never lands on the same slot as its own subject's
+theory session.*
 
 ### 5. Division double-booking
 **One division (a specific class/section of students — e.g. "BSCS Part-I,
