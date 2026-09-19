@@ -1,11 +1,12 @@
 # IMCS Scheduler — Project Audit
 
-**Snapshot date:** 2026-09-19, at the end of Phase 7 — real GA integration
-end to end: database models, seed data from `docs/timetable.json`, the
-production scheduler package (all 9 hard constraints), the
-`/api/v1/timetables` endpoints, and a real frontend page, wired together and
-tested through the real system (no mocks), including over the real local
-network from a phone.
+**Snapshot date:** 2026-09-19, at the end of Phase 8 — full 8-division GA
+convergence. Phase 7 wired the real GA end to end (database models, seed data
+from `docs/timetable.json`, the production scheduler package with all 9 hard
+constraints, the `/api/v1/timetables` endpoints, a real frontend page) but the
+full BSCS Part-I to Part-IV problem stalled 1-20 violations short of zero.
+Phase 8 fixed that with a greedy (constructive) starting population: the full
+problem now converges in 100/100 seeded runs, in under a second of search time.
 
 This file exists so a fresh conversation (or a new person) can pick the
 project up without re-reading every prior phase report. It answers: what
@@ -83,14 +84,17 @@ backend/
 │       ├── chromosome.py                 real (Phase 7) — Gene, SessionRequirement, DivisionInfo,
 │       │                                    load_divisions, build_session_requirements from the DB
 │       ├── fitness.py                    real (Phase 7) — fitness_from_violations
-│       ├── engine.py                     real (Phase 7) — evolve() loop, stagnation detection +
-│       │                                    partial-population restarts, generate_timetable() entry point
+│       ├── engine.py                     real (Phase 7, extended Phase 8) — evolve() loop, stagnation
+│       │                                    detection + partial-population restarts, half-greedy /
+│       │                                    half-random starting population, generate_timetable() entry point
+│       ├── seeding.py                    real (Phase 8) — constructive_chromosome(): greedy clash-free
+│       │                                    placement, most-constrained teachers first
 │       ├── operators.py                  real (Phase 7) — tournament_select, two_point_crossover,
 │       │                                    mutate_targeted (blame-carrying targeted mutation)
 │       ├── constraints/
 │       │   ├── hard.py                   real (Phase 7) — all 9 hard constraints, lazy Violation.describe()
 │       │   └── soft.py                   placeholder — docstring only, out of scope this phase
-│       └── dev_scripts/                  dev-script — kept for reference, not deleted (see §5)
+│       └── dev_scripts/                  dev-script — reference only; deletion condition now met (see §5)
 │           ├── phase4_bscs_part1_ga.py   dev-script — single-division GA, BSCS Part-I Morning
 │           ├── phase5_multi_division_ga.py  dev-script — 4-division GA, BSCS Part-I + Part-II
 │           └── phase6_full_bscs_morning_ga.py  dev-script — 8-division GA, full BSCS Morning shift
@@ -153,13 +157,15 @@ including from a phone over the real local network, not just localhost.
 | 6 | Standalone GA, 8 divisions (full BSCS Morning, Part-I through IV), shared-room contention proven, super-linear generation growth identified as a risk | Done (dev script only) |
 | This cleanup | Removed One Max scaffolding and OR-Tools/hybrid references; adopted `docs/timetable.json` as GA reference data; documented all 9 constraints in `docs/CONSTRAINTS.md`; full regression test of everything above; this audit | Done |
 | 7 | Real GA integration: Division/Timetable DB models + migration, seed from `docs/timetable.json`, production scheduler package (all 9 hard constraints, lazy violation messages, stagnation detection + restarts), `/api/v1/timetables` endpoints, `/timetables` frontend page, tested end to end incl. over LAN from a phone | Done — see §4, §8 for honest results at full scale |
+| 8 | Full 8-division convergence: greedy constructive seeding for half of every fresh population (Technique 1 of 3; Techniques 2-3 deliberately not needed). Full BSCS problem 100/100 converged at generation 1 | Done — see §4, §11 |
 
 ---
 
 ## 3. Current database state
 
 Confirmed by direct query against the live Supabase database on 2026-09-19,
-after the Phase 7 seed and two real `POST /api/v1/timetables/generate` runs:
+after the Phase 7 seed and the real `POST /api/v1/timetables/generate` runs of
+Phases 7-8:
 
 | Table | Row count | Populated with |
 |---|---|---|
@@ -171,14 +177,13 @@ after the Phase 7 seed and two real `POST /api/v1/timetables/generate` runs:
 | `courses` | 68 | 45 from the 2024 scheme (unchanged) + 23 from the synthetic scheme |
 | `divisions` | 8 | BSCS Part-I to Part-IV, Morning shift, PM/PE split each |
 | `division_courses` | 43 | Real course/teacher assignments per division, incl. joint PM/PE subjects |
-| `timetables` | 2 | Both draft, both converged, from real `POST /generate` calls in this phase's testing |
-| `timetable_sessions` | 84 | 42 per timetable run (BSCS Part-I only, both test calls used `division_ids:[1,2]`) |
+| `timetables` | 7 | All draft, all converged. #1-2 are from Phase 7 and #3-6 were created between sessions, all 2-division (BSCS Part-I) runs; **#7 is the full 8-division BSCS Part-I to Part-IV timetable, generated through the real API in Phase 8** |
+| `timetable_sessions` | 384 | 6 x 42 (the 2-division runs) + 132 (the full run, #7) |
 
-**Full 8-division generation was run (§8, §4) but its result was not saved
-as a `Timetable` row** — that run was made directly against `engine.evolve()`
-for measurement purposes, not through the API, and it did not converge (see
-§4). The two saved `timetables` rows are both the smaller, proven-converging
-2-division case, generated through the real HTTP endpoint.
+**Timetable #7 is independently verified** (Phase 8, §11): its 132 saved rows were
+re-checked by code that shares nothing with the scheduler — zero rule violations,
+and all 59 (part, section, subject, lab?) groups match `docs/timetable.json` in
+session count and teacher.
 
 ---
 
@@ -201,37 +206,77 @@ for measurement purposes, not through the API, and it did not converge (see
   asked; `engine.evolve()` restarts part of the population after 400
   generations without improvement, up to `MAX_RESTARTS` times).
 
-### What's still fragile — an honest scaling result, not a bug
-- **The full 8-division, 132-session, 9-constraint problem does not
-  reliably converge within a practical time budget.** Three real runs
-  against `engine.evolve()` directly (not saved as `Timetable` rows, since
-  none converged):
-  - seed=1, `max_generations=3000`, `MAX_RESTARTS=3`: stagnated, 7
-    violations left, 645.7s.
-  - seed=7, `max_generations=8000`, `MAX_RESTARTS=3`: stagnated at
-    generation 2547, 20 violations left, 381.0s.
-  - seed=7, `max_generations=8000`, `MAX_RESTARTS=8` (current setting):
-    stagnated at generation 6333, **1 violation left**
-    (`teacher_outside_availability`), 655.8s.
-  Raising `MAX_RESTARTS` from 3 to 8 is a real, measured improvement (20 → 1
-  remaining violation on the same seed) and is disclosed with its reasoning
-  in `engine.py`'s own comment — but it is not full convergence, and further
-  tuning wasn't chased down at the cost of shipping the rest of this phase.
-  A smaller BSCS Part-I + Part-II subset (~78 sessions, the same scale
-  Phase 5's dev script converged 10/10 on) was also tested directly and
-  stagnated with 1 violation after 1736 generations — confirming the extra
-  difficulty comes from the 3 new constraints (7-9), which Phase 5's dev
-  script never had to satisfy, not from a regression in the GA machinery
-  itself.
-- **No infeasibility pre-check still.** A feasibility script was run this
-  phase checking every teacher's `2 x available_days` (constraint 7 ceiling)
-  and `3 x available_days` (constraint 8 ceiling) against their real
-  assigned load — no teacher is mathematically overloaded, so the
-  non-convergence above is a search-difficulty problem, not an infeasible
-  one. The engine still can't say this on its own; it was checked manually.
-- **Real declared availability still hasn't been tested** — availability is
-  still derived from days a teacher appears in the real published
-  timetable, same caveat as the previous audit.
+### Phase 8 result — the full 8-division problem now converges
+
+The Phase 7 problem: the real engine on all 8 BSCS Morning divisions (132
+sessions, all 9 constraints) never reached zero violations. Phase 8 tried
+Technique 1 (greedy constructive seeding) first, it worked, and Techniques 2
+(two-stage decomposition) and 3 (honest-partial-result fallback) were
+deliberately not built. Full runs are in §11; the headline comparison:
+
+| Run | Setup | Result |
+|---|---|---|
+| Phase 7 baseline | seed=1, 3000 gens, 3 restarts | did not converge, 7 violations left, 645.7s |
+| Phase 7 baseline | seed=7, 8000 gens, 3 restarts | did not converge, 20 violations left, 381.0s |
+| Phase 7 baseline | seed=7, 8000 gens, 8 restarts | did not converge, 1 violation left (`teacher_outside_availability`), 655.8s |
+| **Phase 8** | seeds 1,2,3,4,5,7 (same engine, same settings, 50% constructive) | **6/6 converged at generation 1, 0.2-0.3s each** |
+| **Phase 8** | 100 seeds (1000-1099), full problem | **100/100 converged, all at generation 1, mean 0.35s, max 0.61s, 100 distinct timetables** |
+
+Why it works: the load analysis (§11) showed several teachers with exactly as
+many sessions as their available days can hold (6 sessions on 2 days at the
+3/day cap), a near-zero-slack packing that random repair almost never
+finishes. The greedy placer (`scheduler/seeding.py`) places the least-flexible
+teachers first and takes only clash-free slots. On its own it produces a
+violation-free timetable 143 times in 200 tries (a random individual: 0 in 200,
+mean 137.6 violations), so half a starting population contains a clean answer
+immediately.
+
+The smaller cases did not regress: BSCS Part-I (2 divisions) and the
+Phase-5-sized Part-I+II (4 divisions, 78 sessions) both converge 100/100 at
+generation 1. With seeding switched off (`constructive_fraction=0.0`) the
+evolutionary loop is bit-for-bit unchanged: seed 1 on Part-I still takes 84
+generations, exactly its Phase 7 number, and all 8 tried seeds converge.
+
+### What's still fragile — read this before trusting a timetable
+
+- **A lecture room and its lab can be the same physical room (open, real,
+  found in Phase 8).** The seed stores "Room 03" and "Room 03 (Lab)" as two
+  separate rooms, so the room-clash rule never compares them. `docs/timetable.json`
+  writes lab rooms as "Lab / Room No: 03", so they may well be one physical
+  room. Measured: the real timetable has **0** overlaps between a lab and a
+  same-numbered lecture room; the GA's timetables have at least one in **91 of
+  100** runs (159 in total). "Zero violations" is true against the 9 defined
+  constraints but would be optimistic if these are one room. Enforcing it
+  costs nothing in convergence (scratch test, 20/20 at generation 1). It needs
+  a department answer, then a small modelling change — see §9.
+- **The evolutionary loop is no longer exercised on this data.** Everything
+  converges at generation 1, from the greedy seeder alone, so the crossover /
+  mutation / restart machinery is now a safety net rather than the workhorse.
+  It is intact (see above) but only proven to work at these sizes.
+- **The seeder repeats the constraint rules.** `seeding.py` re-states which
+  slots are clean (teacher/room/division busy, daily caps) instead of asking
+  `hard.py`. It imports the two cap constants, and every candidate is still
+  scored by `hard.py`, so a stale seeder can only make convergence worse, never
+  let a violation through — but a new constraint must be added in both places
+  to keep the fast path fast.
+- **Greedy seeding is proven on one dataset.** BS(AI), Evening shift or
+  tighter real availability could be much harder; nothing here says the seeder
+  would still hit zero.
+- **The not-converged path is honest but thin.** If a run does not converge the
+  API still saves it as `draft` with `converged=false` and a `conflict_list`,
+  and the frontend shows a warning with the first 10 conflicts, never a
+  success. But (a) messages name raw ids ("Teacher 31", "Course 428"), not
+  people and subjects, and (b) there's no hard time budget — the worst case is
+  4000 generations plus up to 8 restarts (~10+ minutes measured in Phase 7).
+- **No infeasibility pre-check.** The engine can't tell "hard to solve" from
+  "impossible"; feasibility was checked by hand in Phase 7.
+- **Real declared availability still hasn't been tested.** Availability is
+  still derived from days a teacher appears in the real published timetable, so
+  the problem is guaranteed solvable — real availability could be tighter.
+- **The API is slow because the database is remote, not because of the GA.**
+  A generate call spends ~0.13s searching and 5-10s saving 132 rows to Supabase;
+  the list endpoint takes ~12s once ~10 timetables exist (extra queries per
+  timetable). Not touched in Phase 8.
 
 ### The 9 constraints (full detail in `docs/CONSTRAINTS.md`)
 
@@ -274,32 +319,34 @@ reference only, not as a second live implementation.
   already-computed violation set (never recomputed), tournament selection,
   two-point crossover, and blame-carrying targeted mutation — the Phase 5-6
   mutation strategy, not Phase 4's uniform mutation.
-- **`engine.py`** — the generation loop, now with stagnation detection and
-  partial-population restarts (previous audit's other flagged gap), and
-  `generate_timetable()`, the real entry point the API calls.
+- **`engine.py`** — the generation loop, with stagnation detection and
+  partial-population restarts, a starting population that is half greedy /
+  half random (`constructive_fraction`, Phase 8; `fresh_individuals()` builds it
+  and is also used to refill after a restart), and `generate_timetable()`, the
+  real entry point the API calls.
+- **`seeding.py`** (Phase 8) — `constructive_chromosome()`: places sessions one
+  at a time, teachers with the fewest available days first, taking only slots
+  that clash with nothing already placed and falling back to a random
+  placement for a session with no clean slot. Greedy, not guaranteed clean —
+  it just has to start the population close.
 
 **The dev scripts** (`scheduler/dev_scripts/`) — three real, tested,
-**standalone** Python files, kept deliberately, not deleted by default (see
-the retention note in `dev_scripts/__init__.py` for the full reasoning):
-production code fully reproduces Phase 4's result (§4) but not yet Phase
-5's or Phase 6's at matching scale, so these remain the only proof that
-those exact problems are solvable with a GA at all, useful as a reference
-while `engine.py`'s tuning keeps closing the gap.
+**standalone** Python files, kept as reference only. Production now does
+everything they did and more: it converges on the full 8-division problem
+(100/100, §4) where phase6's own result was 10/10, and it checks 9 constraints
+where they checked 5-6. The condition Phase 7 set for deleting them ("once a
+production run matches or beats their convergence at the same scale") is met.
+They are still in the repo only because deleting them also means editing the
+references in `PROJECT_ARCHITECTURE.md` and `CONSTRAINTS.md`; safe to delete.
 
-- **`phase4_bscs_part1_ga.py`** — one division (BSCS Part-I Morning),
-  plausible-but-unconfirmed teacher assignments, 5 hard constraints, uniform
-  mutation. Superseded by production for this scale (§4).
+- **`phase4_bscs_part1_ga.py`** — one division (BSCS Part-I Morning), 5 hard
+  constraints, uniform mutation.
 - **`phase5_multi_division_ga.py`** — 4 divisions, real teacher data,
-  blame-carrying targeted mutation introduced here. Production does not yet
-  match its 10/10 convergence at this scale under the fuller 9-constraint
-  set (§4).
+  blame-carrying targeted mutation introduced here.
 - **`phase6_full_bscs_morning_ga.py`** — all 8 BSCS Morning divisions.
-  Production does not yet match its 10/10 convergence at this scale either
-  (§4) — its own numbers remain the reference point for "this is solvable."
 
 Each dev script is fully self-contained (no shared imports between them or
-with the production package) so any one can still be read and run on its
-own. **They are not imported by, called from, or in any way connected to
+with the production package). **They are not imported by, called from, or in any way connected to
 the database, the API layer, or the frontend** — that connection now exists
 only through the production package.
 
@@ -322,10 +369,14 @@ only through the production package.
 - **BS(AI) and Evening-shift scheduling** — explicitly out of scope for
   Phase 7; the GA package and seed data cover BSCS Part-I to Part-IV,
   Morning shift only.
-- **Full-scale (8-division) generation reliably converging** — see §4;
-  the search gets very close (1 remaining violation after ~655s with the
-  current tuning) but does not yet reliably reach zero within a practical
-  time budget, and this hasn't been resolved.
+- **A defined time budget and readable conflict reporting for a run that
+  doesn't converge** (this was "Technique 3" of Phase 8, deliberately not
+  built because seeding made it unnecessary on current data). Today a
+  non-converged run is saved honestly as a draft with its conflicts listed, but
+  the conflicts are raw ids and the search can run ~10 minutes before giving
+  up. Worth building before any harder dataset (BS(AI), Evening) is attempted.
+- **Deciding whether a lecture room and its lab are one physical room** — see
+  §4 and §9.
 - **`LabBatch` rows** — the model exists (`app/models/division.py`) but the
   Phase 7 seed does not populate it; lab sessions are scheduled per-division
   as a whole, not split into sub-batches.
@@ -433,11 +484,8 @@ department/supervisor answer at some point.
 - **`R.K` teaching E.C(PM) on Part-IV isn't in the Part-IV legend** (Phase
   6): resolved to Mr. Rajesh Kumar by cross-referencing the Part-III
   legend, not confirmed independently.
-- **Lab rooms are an assumption, not confirmed data** (Phase 4-6): none of
-  the source timetable PDFs name a room for lab sessions. The dev scripts
-  invented a "Computer Lab" pool (1-2 rooms depending on phase) sized to
-  whatever the real schedule's simultaneous-lab pattern needed. Real lab
-  room assignments should replace this before anything here is trusted.
+- **Lab rooms were an assumption in Phases 4-6** — superseded: `docs/timetable.json`
+  names a room for every lab row and the Phase 7 seed uses them (see the next bullet).
 - **Two people with nearly identical surnames on different sheets** (Phase
   6): "Dr. Hameedullah Bhutto" (Part-I) and "Mr. Hammad Bhutto" (Part-III)
   are different people who share initials (`H.B`) and a surname — the kind
@@ -460,17 +508,17 @@ department/supervisor answer at some point.
 - **Deleting and re-uploading a Course Scheme leaves the old PDF in Supabase
   Storage** (noted in Phase 3) — nothing currently cleans up an orphaned
   stored file when a scheme is replaced. Minor, not urgent, but real.
-- **Full 8-division GA tuning is unfinished** (Phase 7, §4) — the best
-  measured run gets to 1 remaining violation, not zero, within a ~11-minute
-  budget. Whether that needs a longer generation cap, a different
-  restart/stagnation balance, or a genuinely different approach for
-  constraints 7-9 at this scale hasn't been decided.
-- **Lab room assignment is still a resolved-not-confirmed guess** (Phase
-  7) — `docs/timetable.json`, like the source PDFs before it, doesn't name
-  a lab room for every lab session. The Phase 7 seed script picks a
-  reasonable lecture-room-plus-lab-room pairing per division rather than
-  guessing silently, but this should be replaced with real room assignments
-  before any generated timetable is trusted for actual room booking.
+- **Is "Room NN" the same physical room as "Lab / Room No: NN"?** (Phase 8)
+  The seed models them as two rooms, so the GA can put a lab and a lecture in
+  "the same room" at the same time (91 of 100 generated timetables do; the real
+  timetable never does). If they are one room, the room-clash rule needs to
+  treat them as one — a small change that costs nothing in convergence (§4) but
+  changes what "room" means, so it wants a department answer first.
+- **Lab rooms are no longer a guess, but their identity is** (corrects two
+  earlier bullets). Phases 4-6 invented a lab pool and Phase 7's note here said
+  the JSON doesn't name lab rooms. It does: every lab row has one ("Lab / Room
+  No: 01"; Part-IV has no labs), and the seed uses them as given. What's
+  unresolved is the question above, not where labs go.
 
 ---
 
@@ -570,3 +618,67 @@ correct by direct `curl` calls to `172.20.10.14:8000` and
 see step D-equivalent checks above), and by a real Windows Firewall
 diagnosis explaining the one observed failure — but a live phone-browser
 confirmation after the firewall fix is still outstanding.
+
+---
+
+## 11. Phase 8 testing — commands run and actual results
+
+All of this was run on 2026-09-19 against the live Supabase database. "Engine
+run" means `engine.evolve()` called directly on the real requirements loaded
+from the database (the same code the API calls, without the HTTP/save step, so
+many seeds can run in parallel). "API run" means a real HTTP call.
+
+### Why the problem was hard (load analysis, before changing anything)
+
+`inspect_load` over the 132 real sessions: three teachers (Dr. Hira Fatima,
+Mr. Kamran Brohi, Prof. Dr. Ayaz Keerio) have exactly 6 sessions on 2
+available days, and the daily cap is 3 — so each must get exactly 3 on both
+days, zero slack. Several others (Prof. Dr. Fida Chandio 5 on 2 days; a dozen
+with 4 on 2 days) are nearly as tight. Random repair almost never finishes a
+packing like that, which is why Phase 7 stalled 1 violation short.
+
+### Self-test results
+
+| # | What was run | Result |
+|---|---|---|
+| 1 | Seeder sanity: 200 individuals each, random vs constructive, full problem, count violations | random: mean **137.6**, min 106, **0/200 clean**. constructive: mean **0.7**, max 6, **143/200 clean** |
+| 2 | **Technique 1, engine run x6**, full 8-division, seeds 1,2,3,4,5,7, `max_generations=8000`, restarts 8 (Phase 7 values unchanged), `constructive_fraction=0.5` | seed 1: gens 1, 0.2s, **0 violations**. seed 2: 1, 0.3s, 0. seed 3: 1, 0.2s, 0. seed 4: 1, 0.3s, 0. seed 5: 1, 0.2s, 0. seed 7: 1, 0.3s, 0. **6/6 converged**, 0 restarts |
+| 3 | Same setup vs the Phase 7 baseline (§4) | baseline: 7 violations/645.7s, 20/381.0s, 1/655.8s, **never zero**. Phase 8: **0 violations in 0.2-0.3s, every time** |
+| 4 | 100 seeds (1000-1099), full 8-division | **100/100 converged, all at generation 1**, mean 0.35s, max 0.61s, **100/100 distinct timetables** |
+| 5 | 100 seeds, 4-division Part-I+II (78 sessions, Phase-5-sized) | 100/100 converged, generation 1, mean 0.22s |
+| 6 | 100 seeds, 2-division Part-I (42 sessions) | 100/100 converged, generation 1, mean 0.12s |
+| 7 | **2-division regression via the real API**, 5 seeds | all 5: converged, generation 1, 0.04-0.10s (Phase 7: 74-84 generations, ~3s) |
+| 8 | Evolutionary loop untouched? `constructive_fraction=0.0` (old all-random start), 2-division, seeds 1-8 | all 8 converge: 84, 124, 161, 47, 84, 465, 41, 52 generations. **Seed 1 = 84, identical to its Phase 7 number** |
+| 9 | Deliberately break each of the **9 constraints** on a converged full 8-division timetable (`p8_verify_all9.py`) | **all 9 detectors fire**: teacher double-booked, room double-booked, teacher availability, lab-on-own-theory, division double-booked, cross-division teacher clash (divisions 1 vs 3), same-subject spread ("Course 428 has 3 sessions on Thu ... max 2"), teacher daily load ("Teacher 40 has 5 sessions on Fri, max 3"), one-subject-per-teacher |
+| 10 | **Independent check of saved timetable #7** — reads the 132 `timetable_sessions` rows and re-checks with its own code (no scheduler imports) | teacher/room/division double-booking 0, teacher >3/day 0, same subject >2/day 0, availability OK, labs in lab rooms OK, no lab on its own theory slot. **All 59 (part, section, subject, lab?) groups match `docs/timetable.json` in session count and teacher — 0 mismatches** |
+| 11 | Negative test of #10 (corrupt the loaded rows in memory) | flags availability, teacher/room/division double-booking and a missing session vs the JSON — 5 problems reported, so a clean pass in #10 is meaningful |
+| 12 | `ruff check app/scheduler` (F,E,W,UP,SIM,B, line length 125); `npx tsc --noEmit` | both clean |
+| 13 | Lecture-room vs lab-room identity check (found while testing) | real timetable: **0** same-physical-room overlaps; GA timetables: **91/100** contain >=1 (159 total) — see §4/§9. If enforced, 20/20 still converge at generation 1 (scratch test only, not committed) |
+
+### Desktop manual testing (headless Edge, 1280x900, plus curl)
+
+| Step | Command / Action | Expected | Actual |
+|---|---|---|---|
+| D1 | `uvicorn app.main:app --host 0.0.0.0 --port 8000` | Starts | `Uvicorn running on http://0.0.0.0:8000` |
+| D2 | `npm run dev -- -H 0.0.0.0 -p 3000` | Starts on 3000 | **Failed: port 3000 is held by an unrelated project's Node process (`Bin-Khalid-Dairy-Farm-V2`), left untouched.** Used port **3001** instead (`Network: http://0.0.0.0:3001`), added its origins to the gitignored `backend/.env` CORS list |
+| D3 | `curl -X POST http://localhost:8000/api/v1/timetables/generate -H "Content-Type: application/json" -d '{}'` (default = all 8 BSCS divisions, through the real API) | 201, converged, 132 sessions, no conflicts | **HTTP 201**, `timetable_id:7, converged:true, stagnated:false, fitness_score:0.0, generation_count:1, wall_seconds:0.129, session_count:132, conflict_list:[]` (whole HTTP call 9.0s — nearly all of it remote-database inserts) |
+| D4 | `curl http://localhost:8000/api/v1/timetables/7` | Grouped by division -> day -> time | **HTTP 200**, 8 divisions (Part-I PE 21, PM 24; Part-II 18/18; Part-III 18/18; Part-IV 9/9 — 135 rows because 3 joint PM/PE sessions show in both groups), days in Mon-Fri order |
+| D5 | `curl .../timetables/9999`; `curl -X POST .../generate -d '{"division_ids":[9999]}'`; `-d '{"population_size":"lots"}'` | Clean 4xx with a readable reason | **404** "Timetable 9999 does not exist."; **400** "Division id(s) not found: [9999]"; **422** validation detail naming `body.population_size` |
+| D6 | Open `http://localhost:3001/timetables`, click **Generate BSCS timetable** (real page, real backend) | Success banner, 8 division tables, no conflict alert | Banner: "**Generation finished: converged in 1 generations, 132 sessions placed in 0s.**"; meta line "draft · converged · 132 sessions · 1 generations · fitness 0"; **8 tables**, all 8 division titles shown, no "unresolved conflict" alert; click-to-result 34.6s (dominated by first-load compile and remote-DB round-trips) |
+| D7 | Same page, browser console + layout | No errors, no horizontal page scroll | **0 console errors, no overflow** |
+| D8 | Reload the list on the real page | Newest run on top with draft + Converged badges | **7 items; top item "BSCS Part-I to Part-IV (Morning) · draft · Converged · 132 sessions · 1 generations"**, the six 2-division runs below it, 0 console errors |
+| D9 | Non-converged display | Not applicable — could not be triggered: every run now converges, and Technique 3 (the partial-result fallback) was not built | **Not re-tested this phase.** The Phase 7 non-converged display (warning banner + first 10 conflicts) is unchanged and was last exercised in Phase 7 |
+
+### Mobile manual testing
+
+| Step | Action | Expected | Actual |
+|---|---|---|---|
+| M1 | Same D6 flow at **390x844, touch, mobile viewport** (headless Edge) | Same success, no horizontal page scroll | Banner and 8 tables shown, **0 console errors, no page overflow**; the schedule tables scroll sideways inside their own card, by design, so the page itself never does |
+| M2 | **Real phone over the hotspot LAN** — `ipconfig` -> Wi-Fi IPv4 `172.20.10.14`; URL **`http://172.20.10.14:3001/timetables`** | Page + generate work from the phone | **Not yet confirmed by the user.** The frontend is now on port **3001**, so the Windows Firewall rules given in Phase 7 (ports 3000 and 8000) do not cover it: a rule for 3001 is needed too. It is also unconfirmed whether the Phase 7 rules were ever applied (they need an elevated PowerShell, which this session doesn't have), so port 8000 is not known to be open either |
+
+### Bookkeeping
+
+Test timetables created by this phase's API/UI calls (#8-16) were deleted; #7,
+the independently verified full 8-division run, is kept. Timetables #3-6 were
+created between sessions by something other than these tests and were left
+alone. Final state: 7 timetables, 384 sessions (6 x 42 + 132).

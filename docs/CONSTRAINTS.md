@@ -13,16 +13,27 @@ soft constraints are added, this file gets a second section for them.)
 
 For each constraint: what it actually means in plain language, and where it
 was decided. "Implemented" means there's a working, tested function for it in
-one of the dev scripts under `backend/app/scheduler/dev_scripts/`.
+the production scheduler, `backend/app/scheduler/constraints/hard.py` — that
+is the code the real `POST /api/v1/timetables/generate` endpoint runs. (The
+older standalone dev scripts under `backend/app/scheduler/dev_scripts/` proved
+constraints 1-6 out first; they are reference only now.)
+
+The rules below describe **what a valid timetable is**. How the search finds
+one (Phase 8's greedy starting population, mutation, restarts) lives in
+`docs/PROJECT_AUDIT.md` §4-5 and never relaxes any of these rules — the greedy
+seeder reads the same limits (max 2 same-subject sessions a day, max 3 teacher
+sessions a day) from `hard.py`, and every candidate is still scored by the
+functions in that file.
 
 ---
 
 ## Implemented and verified (constraints 1-6)
 
-These six are all working today in `phase4_bscs_part1_ga.py`,
-`phase5_multi_division_ga.py` and `phase6_full_bscs_morning_ga.py`. Each one
-has its own function (never buried inline in the fitness calculation), and
-each has been proven two ways in every phase report: (a) a clean, GA-produced
+These six were first proven in `phase4_bscs_part1_ga.py`,
+`phase5_multi_division_ga.py` and `phase6_full_bscs_morning_ga.py`, and were
+ported to the production `constraints/hard.py` in Phase 7. Each one has its own
+function (never buried inline in the fitness calculation), and each has been
+proven two ways in every phase report: (a) a clean, GA-produced
 timetable shows zero violations of it, and (b) the timetable is deliberately
 broken in exactly the way that constraint should catch, and the check fires.
 
@@ -55,6 +66,11 @@ theory session.** For example, "Object Oriented Programming" (theory) and
 "Object Oriented Programming (LAB)" are two different sessions that must sit
 at two different times, and the lab one has to be in a computer lab.
 *Decided: Phase 4.*
+*Implementation note (Phase 7): "a room actually suited for a lab" is enforced
+by construction, not by a detector — a lab session's only candidate room is its
+division's own lab room, so the search can't put it anywhere else. The
+`lab_session_rules` detector itself checks the remaining half: the lab never
+lands on the same slot as its own subject's theory session.*
 
 ### 5. Division double-booking
 **One division (a specific class/section of students — e.g. "BSCS Part-I,
@@ -87,12 +103,14 @@ Phase 5, then again at larger scale in Phase 6.*
 
 ---
 
-## Decided but not yet implemented (constraints 7-9)
+## Implemented and verified (constraints 7-9)
 
-These three were decided in this cleanup/pivot phase's discussion. They are
-**not yet coded** in any dev script — phase4/5/6 do not check them. They need
-their own functions added to a future dev script (or to the real
-`app/scheduler/constraints/hard.py` when the GA gets wired into the database).
+These three were decided in the cleanup/pivot phase and implemented for the
+first time in Phase 7, directly in the production `constraints/hard.py` — the
+dev scripts phase4/5/6 do not check them. Each was verified the same two ways
+as 1-6, again in Phase 8 on the full 8-division timetable: a clean solution
+shows zero violations, and a deliberately broken one is caught by exactly that
+constraint's detector.
 
 ### 7. Same-subject daily spread
 **A theory subject's weekly sessions can never have more than 2 of them
@@ -134,6 +152,11 @@ teacher can appear with one subject in a Part-I dataset and a different
 subject in a Part-II dataset without conflict, because those are separate
 generation runs, not the same run).
 *Decided: this cleanup phase, confirmed against real data.*
+*Implementation note (Phase 7): the search never changes which teacher takes
+which subject — that pairing is fixed by the seeded assignments before the
+search starts — so this can't be broken by placement. It is still checked, so a
+bad assignment in the seed data (or a deliberate test) is caught rather than
+silently scheduled.*
 
 ---
 
@@ -147,6 +170,6 @@ generation runs, not the same run).
 | 4 | Lab session rules | Yes | Implemented & verified | Phase 4 |
 | 5 | Division double-booking (joint sessions excluded) | Yes | Implemented & verified | Phase 4, refined Phase 5 |
 | 6 | Cross-division teacher clash | Yes | Implemented & verified | Phase 4, verified Phase 5-6 |
-| 7 | Same-subject daily spread (max 2/day, theory only) | Yes | **Not implemented** | This cleanup phase |
-| 8 | Teacher daily load limit (max 3 sessions/day) | Yes | **Not implemented** | This cleanup phase |
-| 9 | One subject per teacher per Part per semester run | Yes | **Not implemented** | This cleanup phase |
+| 7 | Same-subject daily spread (max 2/day, theory only) | Yes | Implemented & verified | Decided cleanup phase, built Phase 7 |
+| 8 | Teacher daily load limit (max 3 sessions/day) | Yes | Implemented & verified | Decided cleanup phase, built Phase 7 |
+| 9 | One subject per teacher per Part per semester run | Yes | Implemented & verified | Decided cleanup phase, built Phase 7 |
