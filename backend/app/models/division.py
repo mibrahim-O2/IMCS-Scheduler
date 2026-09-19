@@ -59,19 +59,17 @@ class Division(TimestampMixin, Base):
     # rather than recomputed everywhere it's displayed — small convenience, not load-bearing.
     label: Mapped[str] = mapped_column(String(150), nullable=False)
 
-    # This division's own fixed room(s) — a lecture room and, where the division runs labs,
-    # a lab room. Without pinning these per division, the GA has nothing stopping it from
-    # putting a Part-IV lecture in a Part-I room: the room-double-booking constraint only
-    # checks for a day/time clash, not "is this actually this division's room". The dev
-    # scripts (Phase 4-6) avoided this the same way — one fixed room per division, not a
-    # shared pool — this just makes that fact a real column instead of an in-memory dict.
+    # This division's own fixed lecture room. Without pinning it, the GA has nothing
+    # stopping it from putting a Part-IV lecture in a Part-I room: the room-double-booking
+    # constraint only checks for a day/time clash, not "is this actually this division's
+    # room". Labs are deliberately NOT pinned here: the department has five physical labs
+    # (Lab A-E) that any division may use, so the GA picks a lab per session from that
+    # shared pool instead (see scheduler/chromosome.py).
     home_room_id: Mapped[int | None] = mapped_column(ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True)
-    lab_room_id: Mapped[int | None] = mapped_column(ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True)
 
     program: Mapped[Program] = relationship()
     course_scheme: Mapped[CourseScheme | None] = relationship()
     home_room: Mapped[Classroom | None] = relationship(foreign_keys=[home_room_id])
-    lab_room: Mapped[Classroom | None] = relationship(foreign_keys=[lab_room_id])
     courses: Mapped[list["DivisionCourse"]] = relationship(
         back_populates="division",
         foreign_keys="DivisionCourse.division_id",
