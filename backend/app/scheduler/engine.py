@@ -29,6 +29,7 @@ from app.scheduler.chromosome import (
 from app.scheduler.constraints.hard import Violation, all_violations
 from app.scheduler.fitness import fitness_from_violations
 from app.scheduler.operators import mutate_targeted, tournament_select, two_point_crossover
+from app.scheduler.seeding import constructive_chromosome
 
 ALGORITHM_VERSION = "ga-v1-phase7"
 
@@ -60,6 +61,11 @@ class GaSettings:
     mutation_rate: float = 0.03
     elite_count: int = 4
     seed: int | None = None
+    # Share of each fresh batch of individuals (the starting population, and the refill
+    # after a restart) built by the greedy constructive seeder instead of pure random.
+    # 0.0 reproduces the old all-random behaviour; the rest stays random on purpose so
+    # the whole population can't collapse into one local optimum.
+    constructive_fraction: float = 0.5
 
     def as_dict(self) -> dict:
         # For Timetable.generation_params — a record of exactly what settings produced this run.
@@ -71,6 +77,7 @@ class GaSettings:
             "mutation_rate": self.mutation_rate,
             "elite_count": self.elite_count,
             "seed": self.seed,
+            "constructive_fraction": self.constructive_fraction,
             "algorithm_version": ALGORITHM_VERSION,
             "stagnation_window": STAGNATION_WINDOW,
             "max_restarts": MAX_RESTARTS,
@@ -117,6 +124,21 @@ def _score(
     return fitness_from_violations(violations), violations
 
 
+def fresh_individuals(
+    rng: random.Random,
+    count: int,
+    requirements: list[SessionRequirement],
+    teacher_availability: dict[int, set[str]],
+    constructive_fraction: float,
+) -> list[Chromosome]:
+    # A batch of brand-new individuals: the first share are built greedily to dodge clashes,
+    # the rest are pure random so the population keeps genuinely different starting points.
+    constructive_count = round(count * constructive_fraction)
+    built = [constructive_chromosome(rng, requirements, teacher_availability) for _ in range(constructive_count)]
+    built += [random_chromosome(rng, requirements) for _ in range(count - constructive_count)]
+    return built
+
+
 def evolve(
     requirements: list[SessionRequirement],
     divisions: dict[int, DivisionInfo],
@@ -128,7 +150,9 @@ def evolve(
     # stalls, until the timetable is clean or the generation cap is reached.
     started = time.perf_counter()
     rng = random.Random(settings.seed)
-    population = [random_chromosome(rng, requirements) for _ in range(settings.population_size)]
+    population = fresh_individuals(
+        rng, settings.population_size, requirements, teacher_availability, settings.constructive_fraction
+    )
 
     best_fitness_ever = float("-inf")
     generations_without_improvement = 0
@@ -165,7 +189,10 @@ def evolve(
             # Partial restart: keep the elites (the best genetic material found so far),
             # refill everyone else with fresh random individuals to escape the stall.
             elites = [chromosome for _, _violations, chromosome in evaluated[: settings.elite_count]]
-            fresh = [random_chromosome(rng, requirements) for _ in range(settings.population_size - len(elites))]
+            fresh = fresh_individuals(
+                rng, settings.population_size - len(elites), requirements, teacher_availability,
+                settings.constructive_fraction,
+            )
             population = elites + fresh
             restarts_used += 1
             generations_without_improvement = 0
