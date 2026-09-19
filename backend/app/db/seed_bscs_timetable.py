@@ -24,12 +24,20 @@ What this reads from the JSON and how it's turned into rows:
   period) on the Part-I sheet. TEACHER_ALIASES canonicalizes both — without
   this, the seed would create two Teacher rows for one real person and the
   cross-division clash check would silently miss a real clash for them.
-- Room names: the JSON gives each lab its own room string ("Lab / Room No:
-  01"), which resolves the "lab rooms are an assumption" gap Phase 4-6 had
-  to guess at — every lab room here comes straight from the data, not
-  invented. A room shown as "Room No: 01/02" (the joint-session room) is
-  recorded as the PM division's own room — a deliberate simplification,
-  documented rather than modeled as a third physical space.
+- Room names, lecture: each Part's "classrooms" entry names the fixed lecture room
+  per group ("Room No: 01" -> "Room 01"). A room shown as "Room No: 01/02" (the
+  joint-session room) is recorded as the PM division's own room — a deliberate
+  simplification, documented rather than modeled as a third physical space.
+- Room names, labs: the JSON writes lab rooms as "Lab / Room No: 01" .. "06" —
+  six numbered strings that follow the LECTURE room numbering. They are NOT the
+  real labs. The department's real labs are five, shared by every division:
+  Lab A, Lab B, Lab C, Lab D, Lab E (confirmed by the department, not derived
+  from the JSON). The JSON therefore only tells us "this is a lab session" and
+  when; it never says which of the five a session uses. So this seed creates
+  exactly those five rooms, and which lab a given session sits in is decided
+  by the GA's search (clash-avoiding), i.e. inferred, never sourced. An earlier
+  version wrongly turned "Lab / Room No: 03" into a "Room 03 (Lab)" room;
+  remove_placeholder_lab_rooms() clears those out.
 - Credit hours are NOT assumed symmetric between PM and PE: IOT actually
   runs 3 periods/week for Part-I PM but only 2 for Part-I PE in the real
   data, and Mathematics-II is PM-only. DivisionCourse.weekly_theory_periods
@@ -42,7 +50,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
@@ -56,6 +64,9 @@ from app.models import (
     DivisionCourse,
     Program,
     Teacher,
+    Timetable,
+    TimetableSession,
+    TimetableStatus,
 )
 
 TIMETABLE_JSON_PATH = Path(__file__).resolve().parents[3] / "docs" / "timetable.json"
@@ -88,6 +99,12 @@ TEACHER_ALIASES = {
 
 # Subjects shown with section "PM/PE" — one session both groups sit together.
 JOINT_SUBJECTS = {"History-II", "Ethics"}
+
+# The department's five real, physical labs, shared by every BSCS division.
+LAB_ROOM_NAMES = ("Lab A", "Lab B", "Lab C", "Lab D", "Lab E")
+
+# What an earlier seed wrongly created for labs: "Room 03 (Lab)" etc, one per lecture room.
+PLACEHOLDER_LAB_ROOM_RE = re.compile(r"^Room \d+ \(Lab\)$")
 
 GROUP_LABELS = {"PM": "Pre-Medical", "PE": "Pre-Engineering"}
 
@@ -151,21 +168,52 @@ def upsert_teacher(session: Session, full_name: str, home_program_id: int, days:
     return teacher
 
 
-def upsert_classroom(session: Session, name: str, is_lab: bool) -> Classroom:
-    # A classroom is looked up by name (which is unique in the schema) and created if new.
-    # A room that hosts both lectures and labs gets two logical rows (e.g. "Room 01" and
-    # "Room 01 (Lab)") because Classroom.type is one value per row — see module docstring.
-    display_name = f"{name} (Lab)" if is_lab else name
-    classroom = session.scalar(select(Classroom).where(Classroom.name == display_name))
+def upsert_classroom(session: Session, name: str, room_type: ClassroomType) -> Classroom:
+    # A classroom is looked up by its exact name (unique in the schema) and created if new.
+    classroom = session.scalar(select(Classroom).where(Classroom.name == name))
     if classroom is None:
-        classroom = Classroom(
-            name=display_name,
-            type=ClassroomType.LAB if is_lab else ClassroomType.LECTURE,
-            features={},
-        )
+        classroom = Classroom(name=name, type=room_type, features={})
         session.add(classroom)
         session.flush()
     return classroom
+
+
+def upsert_lab_rooms(session: Session) -> list[Classroom]:
+    # Makes sure exactly the five real labs exist, typed as labs. They belong to no
+    # division: any lab session may use any of them.
+    return [upsert_classroom(session, name, ClassroomType.LAB) for name in LAB_ROOM_NAMES]
+
+
+def remove_placeholder_lab_rooms(session: Session) -> dict[str, int]:
+    # Deletes the invented "Room NN (Lab)" rooms an earlier seed created. Any timetable
+    # that put a lab in one of them describes a room that doesn't exist, so it is stale and
+    # is removed with them — but only if it is still a draft: a published timetable is never
+    # silently deleted, the seed stops and says so instead.
+    fake_rooms = [
+        room
+        for room in session.scalars(select(Classroom).where(Classroom.type == ClassroomType.LAB))
+        if PLACEHOLDER_LAB_ROOM_RE.match(room.name)
+    ]
+    if not fake_rooms:
+        return {"rooms": 0, "timetables": 0, "sessions": 0}
+
+    fake_ids = [room.id for room in fake_rooms]
+    stale_ids = set(
+        session.scalars(select(TimetableSession.timetable_id).where(TimetableSession.room_id.in_(fake_ids)))
+    )
+    stale = session.scalars(select(Timetable).where(Timetable.id.in_(stale_ids))).all() if stale_ids else []
+    kept = [t.id for t in stale if t.status != TimetableStatus.DRAFT]
+    if kept:
+        raise RuntimeError(f"Non-draft timetable(s) {kept} use placeholder lab rooms; resolve them by hand first.")
+
+    sessions_deleted = 0
+    if stale_ids:
+        sessions_deleted = session.execute(
+            delete(TimetableSession).where(TimetableSession.timetable_id.in_(stale_ids))
+        ).rowcount
+        session.execute(delete(Timetable).where(Timetable.id.in_(stale_ids)))
+    session.execute(delete(Classroom).where(Classroom.id.in_(fake_ids)))
+    return {"rooms": len(fake_ids), "timetables": len(stale_ids), "sessions": sessions_deleted}
 
 
 def upsert_synthetic_scheme(session: Session, program_id: int) -> CourseScheme:
@@ -241,7 +289,6 @@ def upsert_division(
     group: str,
     scheme_id: int,
     home_room_id: int,
-    lab_room_id: int,
 ) -> Division:
     # Matched on (program, part, shift, group) — the natural key for "one specific class".
     division = session.scalar(
@@ -263,7 +310,6 @@ def upsert_division(
     division.course_scheme_id = scheme_id
     division.label = f"BS Computer Science Part-{'I' * part if part <= 3 else 'IV'} (Morning) — {GROUP_LABELS[group]}"
     division.home_room_id = home_room_id
-    division.lab_room_id = lab_room_id
     return division
 
 
@@ -308,18 +354,13 @@ def seed_part(
     # Does one BSCS Part end to end: divisions, courses, teachers, classrooms, assignments.
     parsed = parse_part_schedule(program_json)
 
-    # Each group's fixed room comes straight from the JSON's own "classrooms" entry for
-    # this Part (e.g. {"PM": "Room No: 01", "PE": "Room No: 02"}) — created once here so
-    # every division is pinned to its own lecture and lab room (see Division.home_room_id).
+    # Each group's fixed lecture room comes straight from the JSON's own "classrooms" entry
+    # for this Part (e.g. {"PM": "Room No: 01", "PE": "Room No: 02"}). Labs are not set here:
+    # they are the five shared labs, chosen per session by the GA (see Division.home_room_id).
     divisions = {}
     for group in ("PM", "PE"):
-        room_name = room_base_name(program_json["classrooms"][group])
-        lecture_room = upsert_classroom(session, room_name, is_lab=False)
-        lab_room = upsert_classroom(session, room_name, is_lab=True)
-        session.flush()
-        divisions[group] = upsert_division(
-            session, program_id, part_number, group, scheme_id, lecture_room.id, lab_room.id
-        )
+        lecture_room = upsert_classroom(session, room_base_name(program_json["classrooms"][group]), ClassroomType.LECTURE)
+        divisions[group] = upsert_division(session, program_id, part_number, group, scheme_id, lecture_room.id)
     session.flush()
 
     # Every distinct subject in this Part, with its per-section rows, so credit hours and
@@ -399,6 +440,11 @@ def seed(session: Session) -> None:
     if program is None:
         raise RuntimeError("BS Computer Science program not found — run app.db.seed first.")
 
+    upsert_lab_rooms(session)
+    removed = remove_placeholder_lab_rooms(session)
+    if removed["rooms"]:
+        print(f"removed placeholder lab rooms: {removed}")
+
     scheme = upsert_synthetic_scheme(session, program.id)
     session.flush()
 
@@ -428,6 +474,9 @@ def main() -> None:
         }
     for label, value in counts.items():
         print(f"{label}: {value}")
+    with SessionLocal() as session:
+        rooms = session.scalars(select(Classroom).order_by(Classroom.type, Classroom.name)).all()
+    print("rooms:", ", ".join(f"{room.name} [{room.type.value}]" for room in rooms))
 
 
 if __name__ == "__main__":
