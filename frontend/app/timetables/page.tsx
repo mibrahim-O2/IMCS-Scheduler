@@ -18,10 +18,11 @@ import {
 type Stage = "list" | "detail";
 type Notice = { tone: "success" | "error" | "warning"; text: string } | null;
 
-// The real BSCS Part-I to Part-IV problem has taken anywhere from a few minutes to well
-// over ten in testing (132 real sessions, 9 hard constraints) — this is shown up front so
-// "generating…" doesn't look stuck or broken while it genuinely keeps working.
-const EXPECTED_WAIT_NOTE = "This schedules all of BSCS Part-I to Part-IV at once — it can take several minutes.";
+// With the greedy starting population the full BSCS problem normally comes back in a few
+// seconds, but a case the search can't solve cleanly still keeps trying for minutes before
+// it gives up — so the note promises neither extreme and the elapsed timer covers the rest.
+const EXPECTED_WAIT_NOTE =
+  "This schedules all of BSCS Part-I to Part-IV at once — usually a few seconds, though a hard case can take a few minutes.";
 
 function formatElapsed(seconds: number): string {
   // Turns a running second count into "1m 42s" for the generating indicator.
