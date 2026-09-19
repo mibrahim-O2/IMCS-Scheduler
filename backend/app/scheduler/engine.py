@@ -31,7 +31,7 @@ from app.scheduler.fitness import fitness_from_violations
 from app.scheduler.operators import mutate_targeted, tournament_select, two_point_crossover
 from app.scheduler.seeding import constructive_chromosome
 
-ALGORITHM_VERSION = "ga-v1-phase7"
+ALGORITHM_VERSION = "ga-v2-phase8"  # v2: greedy constructive starting population
 
 # How many generations without a fitness improvement before the run is considered
 # stagnant. Chosen from Phase 6's own numbers: its slowest converged run (population 120,
@@ -187,7 +187,7 @@ def evolve(
                     wall_seconds=time.perf_counter() - started, final_violations=best_violations,
                 )
             # Partial restart: keep the elites (the best genetic material found so far),
-            # refill everyone else with fresh random individuals to escape the stall.
+            # refill everyone else with a fresh half-greedy, half-random batch to escape the stall.
             elites = [chromosome for _, _violations, chromosome in evaluated[: settings.elite_count]]
             fresh = fresh_individuals(
                 rng, settings.population_size - len(elites), requirements, teacher_availability,
