@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { ChatWidget } from "@/components/chat/chat-widget";
 import { SiteHeader } from "@/components/ui/site-header";
 
 import "./globals.css";
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body className="min-h-screen bg-surface text-content antialiased">
         <SiteHeader />
         {children}
+        <ChatWidget />
       </body>
     </html>
   );
