@@ -49,6 +49,9 @@ export type SchemeSummary = {
   id: number;
   program_id: number;
   program_name: string;
+  // Which Part slot this scheme fills (Phase 10); null for the Phase 7/9 synthetic schemes
+  // that were never uploaded through the per-Part flow.
+  applies_to_part: number | null;
   scheme_year: number;
   source_filename: string | null;
   file_url: string | null;
@@ -154,6 +157,7 @@ export function extractSchemeText(file: File): Promise<ExtractionResponse> {
 export function saveScheme(params: {
   file: File;
   programId: number;
+  appliesToPart: number;
   schemeYear: number;
   semesters: SemesterRows[];
   rawText: string;
@@ -165,6 +169,7 @@ export function saveScheme(params: {
     "payload",
     JSON.stringify({
       program_id: params.programId,
+      applies_to_part: params.appliesToPart,
       scheme_year: params.schemeYear,
       content: { semesters: params.semesters },
       raw_text: params.rawText,

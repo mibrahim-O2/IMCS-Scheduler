@@ -5,8 +5,11 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { pairSemesters, summarize, type SemesterRows } from "@/lib/schemes";
 
+const PART_LABELS = ["Part-I", "Part-II", "Part-III", "Part-IV"];
+
 export function PreviewStep({
   programName,
+  appliesToPart,
   schemeYear,
   fileName,
   semesters,
@@ -15,6 +18,7 @@ export function PreviewStep({
   onConfirm,
 }: {
   programName: string;
+  appliesToPart: number;
   schemeYear: number;
   fileName: string;
   semesters: SemesterRows[];
@@ -29,6 +33,7 @@ export function PreviewStep({
 
   const facts: [string, string][] = [
     ["Program", programName],
+    ["Part", PART_LABELS[appliesToPart - 1]],
     ["Scheme year", String(schemeYear)],
     ["Document", fileName],
     ["Courses", String(totals.courses)],

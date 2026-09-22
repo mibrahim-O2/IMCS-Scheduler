@@ -5,41 +5,33 @@ import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { CheckboxInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
-import { matchProgramId, parseSchemeText } from "@/lib/scheme-text-parser";
-import {
-  emptyCourse,
-  labBaseName,
-  summarize,
-  type CourseRow,
-  type Program,
-  type SchemeSummary,
-  type SemesterRows,
-} from "@/lib/schemes";
+import { CheckboxInput, NumberInput, TextInput } from "@/components/ui/field";
+import { comparableProgramName, parseSchemeText } from "@/lib/scheme-text-parser";
+import { emptyCourse, labBaseName, summarize, type CourseRow, type SemesterRows } from "@/lib/schemes";
+
+const PART_LABELS = ["Part-I", "Part-II", "Part-III", "Part-IV"];
 
 type FillMessage = { tone: "success" | "warning"; text: string } | null;
 
 // Step 3: the structured course rows one row per course, with any lab recorded on that course.
+// Program and Part arrive fixed (Phase 10): the admin chose them by which slot they clicked on
+// the schemes page, so this step only ever fills in one specific slot, never picks a program.
 export function CourseFormStep({
-  programs,
-  programId,
+  programName,
+  appliesToPart,
   schemeYear,
   semesters,
   rawText,
-  existingSchemes,
-  onChangeProgram,
   onChangeYear,
   onChangeSemesters,
   onBack,
   onNext,
 }: {
-  programs: Program[];
-  programId: number | null;
+  programName: string;
+  appliesToPart: number;
   schemeYear: number;
   semesters: SemesterRows[];
   rawText: string;
-  existingSchemes: SchemeSummary[];
-  onChangeProgram: (programId: number) => void;
   onChangeYear: (year: number) => void;
   onChangeSemesters: (semesters: SemesterRows[]) => void;
   onBack: () => void;
@@ -47,6 +39,10 @@ export function CourseFormStep({
 }) {
   const [fillMessage, setFillMessage] = useState<FillMessage>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  // Null until a fill is attempted; then whether that attempt could read a year from the
+  // text. Shown as a persistent prompt (not just the transient fillMessage above) so "enter
+  // it manually" stays visible while the admin is doing exactly that.
+  const [yearDetected, setYearDetected] = useState<boolean | null>(null);
 
   function updateCourse(semesterIndex: number, courseIndex: number, patch: Partial<CourseRow>) {
     // Applies one field edit without mutating the existing state objects.
@@ -117,14 +113,22 @@ export function CourseFormStep({
     }
 
     onChangeSemesters(parsed.semesters);
+    // The scheme year is auto-detected where the text names it clearly; when it can't be,
+    // this says so plainly instead of silently keeping whatever the year field already
+    // showed, which would look like a real (and possibly wrong) detected value.
+    setYearDetected(parsed.schemeYear !== null);
     if (parsed.schemeYear) onChangeYear(parsed.schemeYear);
-    const matchedProgram = matchProgramId(parsed.programLabel, programs);
-    if (matchedProgram !== null) onChangeProgram(matchedProgram);
 
     const filled = summarize(parsed.semesters);
+    // Warns if the text names a different program than the slot this upload is going
+    // into a real mistake (wrong file picked) is worth flagging before it's saved.
+    const nameMismatch =
+      parsed.programLabel !== null && comparableProgramName(parsed.programLabel) !== comparableProgramName(programName);
     setFillMessage({
-      tone: "success",
-      text: `Filled ${filled.courses} courses across ${parsed.semesters.length} semesters (${filled.labs} with a lab, merged onto their theory course). Check each row before previewing.`,
+      tone: nameMismatch ? "warning" : "success",
+      text: nameMismatch
+        ? `Filled ${filled.courses} courses, but the document says "${parsed.programLabel}" check this is really meant for ${programName} before previewing.`
+        : `Filled ${filled.courses} courses across ${parsed.semesters.length} semesters (${filled.labs} with a lab, merged onto their theory course). Check each row before previewing.`,
     });
   }
 
@@ -139,26 +143,20 @@ export function CourseFormStep({
 
   const totals = summarize(semesters);
   const yearIsValid = Number.isInteger(schemeYear) && schemeYear >= 2000 && schemeYear <= 2100;
-  const conflict = existingSchemes.find(
-    (scheme) => scheme.program_id === programId && scheme.scheme_year === schemeYear,
-  );
   const rowsComplete = semesters.every((semester) =>
     semester.courses.every((course) => course.code.trim() && course.name.trim()),
   );
 
-  // The first problem that stops the admin from previewing, shown next to the button.
-  const blockingReason =
-    programId === null
-      ? "Choose a program."
-      : !yearIsValid
-        ? "Fix the scheme year."
-        : conflict
-          ? "This program already has a scheme for that year."
-          : totals.courses === 0
-            ? "Add at least one course."
-            : !rowsComplete
-              ? "Every course needs a code and a name."
-              : null;
+  // The first problem that stops the admin from previewing, shown next to the button. A
+  // same-slot conflict can't happen here any more: the schemes page only offers "Upload"
+  // on an empty slot, so there is nothing to collide with by the time this step is reached.
+  const blockingReason = !yearIsValid
+    ? "Fix the scheme year."
+    : totals.courses === 0
+      ? "Add at least one course."
+      : !rowsComplete
+        ? "Every course needs a code and a name."
+        : null;
 
   return (
     <section className="space-y-5">
@@ -191,12 +189,12 @@ export function CourseFormStep({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SelectInput
-          label="Program"
-          value={programId ?? ""}
-          onChange={(value) => onChangeProgram(Number(value))}
-          options={programs.map((program) => ({ value: program.id, label: program.display_name }))}
-        />
+        <div className="rounded-lg bg-surface p-3 ring-1 ring-content/15">
+          <p className="text-xs font-medium uppercase tracking-wide text-content/60">Uploading into</p>
+          <p className="mt-1 text-sm font-medium text-content">
+            {programName} · {PART_LABELS[appliesToPart - 1]}
+          </p>
+        </div>
         <div>
           <NumberInput
             label="Scheme year (admission year)"
@@ -209,10 +207,10 @@ export function CourseFormStep({
         </div>
       </div>
 
-      {conflict && (
-        <Alert tone="error">
-          {conflict.program_name} already has an active {conflict.scheme_year} scheme. Delete it from the saved
-          schemes list first, or choose a different year.
+      {yearDetected === false && (
+        <Alert tone="warning">
+          Couldn&apos;t detect the scheme year from the extracted text confidently. Enter it by hand above before
+          previewing.
         </Alert>
       )}
 

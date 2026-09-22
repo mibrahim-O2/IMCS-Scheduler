@@ -3,7 +3,7 @@
  * scheme page. It only pre-fills the form the admin still checks every row.
  */
 
-import { pairLabRows, type Program, type SemesterRows } from "@/lib/schemes";
+import { pairLabRows, type SemesterRows } from "@/lib/schemes";
 
 export type ParsedScheme = {
   semesters: SemesterRows[];
@@ -63,14 +63,8 @@ export function parseSchemeText(text: string): ParsedScheme {
   };
 }
 
-function comparableProgramName(name: string): string {
-  // "BS (COMPUTER SCIENCE)" and "BS Computer Science" both become "BS COMPUTER SCIENCE".
+export function comparableProgramName(name: string): string {
+  // "BS (COMPUTER SCIENCE)" and "BS Computer Science" both become "BS COMPUTER SCIENCE" so
+  // two spellings of the same program can be compared for equality.
   return name.replace(/[^A-Za-z0-9]+/g, " ").trim().toUpperCase();
-}
-
-export function matchProgramId(label: string | null, programs: Program[]): number | null {
-  // Finds the program the document names, if it is one the form offers.
-  if (!label) return null;
-  const wanted = comparableProgramName(label);
-  return programs.find((program) => comparableProgramName(program.display_name) === wanted)?.id ?? null;
 }
