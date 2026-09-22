@@ -17,6 +17,9 @@ httpx==0.28.1              # Supabase Storage REST calls
 pytesseract==0.3.13        # OCR fallback for scanned PDFs (needs the Tesseract binary)
 pdf2image==1.17.0          # rasterizes PDF pages for OCR (needs poppler)
 
+# Phase 10: function-calling chatbot (real DB queries, not RAG see PROJECT_ARCHITECTURE.md §8)
+google-genai==2.24.0
+
 # Later phases, uncomment when the phase that needs them begins
 # pytest                 # scheduler and API tests
 # reportlab              # PDF export (PROJECT_ARCHITECTURE.md §9)

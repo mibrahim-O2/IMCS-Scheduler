@@ -35,6 +35,11 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
 
+    # Gemini API key for the Phase 10 function-calling chatbot (docs/PROJECT_ARCHITECTURE.md
+    # §8). Empty string means "not configured" the chat endpoint reports that clearly
+    # instead of crashing; every other part of the app works without it.
+    gemini_api_key: str = ""
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def split_comma_separated(cls, value: object) -> object:
