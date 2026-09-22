@@ -104,8 +104,19 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
     requirements: list[SessionRequirement] = []
     for assignment in assignments:
         division = divisions[assignment.division_id]
-        if division.home_room_id is None:
-            raise ValueError(f"{division.label} has no home_room_id set — re-run the seed.")
+
+        # A theory session's room: the assignment's own pre-assigned lecture room (set per
+        # course through the Phase 9 data-entry dashboard) if there is one, otherwise the
+        # division's one fixed room (how every BSCS Part-I to Part-IV assignment from Phase
+        # 7-8.1 still works — none of them set lecture_room_id). Either way this is a single
+        # room, never a pool: a theory session's room search space is one option, same
+        # design as always, just sourced from two possible places now.
+        theory_room_id = assignment.lecture_room_id or division.home_room_id
+        if theory_room_id is None:
+            raise ValueError(
+                f"{division.label}: course {assignment.course_id} has no lecture room — set one on the "
+                "assignment, or set the division's home_room_id."
+            )
 
         # A joint session (e.g. History-II) belongs to two divisions at once, but only if
         # the other division was actually included in this run — otherwise it is simply a
@@ -122,12 +133,21 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
                     teacher_id=assignment.teacher_id,
                     division_ids=division_ids_for_gene,
                     is_lab=False,
-                    candidate_rooms=(division.home_room_id,),
+                    candidate_rooms=(theory_room_id,),
                 )
             )
 
         if assignment.has_lab and assignment.lab_teacher_id and assignment.weekly_lab_periods:
-            if not lab_room_ids:
+            # A pre-assigned lab room (Phase 9) narrows the search to that one lab — a
+            # single-element tuple, exactly like a fixed theory room above. Left unset, a lab
+            # session may use any of the shared labs, as it always has since Phase 8.1.
+            # Either way, mutation and crossover choose among (or copy) only what's in this
+            # tuple, so a pre-assigned room can never be reassigned — see operators.py.
+            if assignment.lab_room_id is not None:
+                lab_candidate_rooms: tuple[int, ...] = (assignment.lab_room_id,)
+            elif lab_room_ids:
+                lab_candidate_rooms = lab_room_ids
+            else:
                 raise ValueError(f"{division.label} has a lab course but no lab rooms exist — re-run the seed.")
             for _ in range(assignment.weekly_lab_periods):
                 requirements.append(
@@ -137,7 +157,7 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
                         teacher_id=assignment.lab_teacher_id,
                         division_ids=(assignment.division_id,),  # labs are never joint in this data
                         is_lab=True,
-                        candidate_rooms=lab_room_ids,
+                        candidate_rooms=lab_candidate_rooms,
                     )
                 )
 

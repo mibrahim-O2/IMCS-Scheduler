@@ -30,6 +30,11 @@ def tournament_select(rng: random.Random, evaluated: list[tuple], tournament_siz
 def two_point_crossover(rng: random.Random, parent_a: Chromosome, parent_b: Chromosome) -> Chromosome:
     # Swaps a middle stretch of gene placements between two parents. Gene positions line
     # up with requirements for both parents, so the child is always a complete timetable.
+    # A gene whose requirement has a pre-assigned (fixed) room — Phase 9 — is unaffected by
+    # which parent it's copied from: every individual's chromosome, everywhere, only ever
+    # places that gene's room from SessionRequirement.candidate_rooms, which is a
+    # single-element tuple for a fixed room. Both parents already agree on that one room at
+    # that position, so swapping the gene swaps day/slot only, in effect.
     if len(parent_a) < 3:
         return list(parent_a)
     first, second = sorted(rng.sample(range(1, len(parent_a)), 2))
@@ -55,6 +60,9 @@ def mutate_targeted(
     # Re-places genes actually causing a violation far more often than genes that are
     # already fine. Takes the violations dict the caller already computed for this
     # chromosome (for fitness) instead of recomputing it here — see constraints/hard.py.
+    # A re-placed gene still can't leave a pre-assigned room: random_gene draws the room
+    # from the requirement's candidate_rooms, which for a fixed room is one element (see
+    # chromosome.build_session_requirements) — day and slot are what actually move.
     blamed = blamed_gene_indexes(all_violations_result)
     mutated = list(chromosome)
     for index, requirement in enumerate(requirements):
