@@ -77,18 +77,33 @@ async def create_scheme(
     if program is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Program {scheme_in.program_id} does not exist.")
 
+    # A program can have only one ACTIVE scheme per Part slot (Phase 10) — the frontend's
+    # per-slot "Replace" flow soft-deletes the old one first, but this check is the real
+    # enforcement, not the UI. Keyed on the slot (program + Part), not the year: uploading a
+    # different year into an already-filled slot is still a replacement, not a new slot.
+    active_in_slot = db.scalar(
+        select(CourseScheme).where(
+            CourseScheme.program_id == scheme_in.program_id,
+            CourseScheme.applies_to_part == scheme_in.applies_to_part,
+            CourseScheme.is_active.is_(True),
+        )
+    )
+    if active_in_slot is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"{program.display_name} Part-{scheme_in.applies_to_part} already has an active "
+            f"{active_in_slot.scheme_year} scheme. Delete it before uploading a replacement.",
+        )
+
+    # A soft-deleted row for this exact slot+year is reused in place rather than inserted
+    # again, matching the unique constraint on (program_id, applies_to_part, scheme_year).
     existing = db.scalar(
         select(CourseScheme).where(
             CourseScheme.program_id == scheme_in.program_id,
+            CourseScheme.applies_to_part == scheme_in.applies_to_part,
             CourseScheme.scheme_year == scheme_in.scheme_year,
         )
     )
-    if existing is not None and existing.is_active:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            f"{program.display_name} already has an active {scheme_in.scheme_year} scheme. "
-            "Delete it before uploading a replacement.",
-        )
 
     data = await file.read()
     if not data:
@@ -107,11 +122,12 @@ async def create_scheme(
         content["raw_text"] = scheme_in.raw_text
 
     try:
-        # Reuse the soft-deleted row for this program/year if there is one; the unique
-        # constraint on (program_id, scheme_year) means we cannot simply insert another.
         scheme = existing or CourseScheme(
-            program_id=scheme_in.program_id, scheme_year=scheme_in.scheme_year
+            program_id=scheme_in.program_id,
+            applies_to_part=scheme_in.applies_to_part,
+            scheme_year=scheme_in.scheme_year,
         )
+        scheme.applies_to_part = scheme_in.applies_to_part
         scheme.source_filename = file.filename
         scheme.file_url = file_url
         scheme.content = content
@@ -280,6 +296,7 @@ def _to_summary(scheme: CourseScheme, program: Program, counts: tuple[int, int])
         id=scheme.id,
         program_id=scheme.program_id,
         program_name=program.display_name,
+        applies_to_part=scheme.applies_to_part,
         scheme_year=scheme.scheme_year,
         source_filename=scheme.source_filename,
         file_url=scheme.file_url,

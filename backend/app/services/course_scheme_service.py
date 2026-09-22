@@ -14,11 +14,11 @@ from typing import Any
 
 import httpx
 import pdfplumber
-from sqlalchemy import delete, func, inspect, select, text
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import Course, CourseScheme
+from app.models import Course, CourseScheme, Division, Timetable, TimetableSession, TimetableStatus
 
 SCHEME_BUCKET = "course-schemes"
 
@@ -242,27 +242,28 @@ def course_counts(session: Session, scheme_ids: list[int]) -> dict[int, tuple[in
 
 
 def find_blocking_timetables(session: Session, scheme_id: int) -> list[str]:
-    # Deleting a scheme must never orphan a published timetable. Division and Timetable models
-    # arrive in a later phase, so the query runs against raw SQL and only once those tables exist;
-    # until then nothing can reference a scheme and the answer is genuinely "nothing blocks it".
-    tables = _existing_table_names(session)
-    if not {"timetables", "divisions"} <= tables:
+    # Deleting a scheme must never orphan a published timetable. A scheme blocks a delete if
+    # any of its divisions (Division.course_scheme_id) shows up in a session belonging to a
+    # PUBLISHED Timetable (TimetableSession.division_ids, a JSONB array checked in Python
+    # rather than fought over in SQL, since the row counts here are small).
+    #
+    # Fixed in Phase 10: this previously queried a `timetables.division_id` column and a
+    # `divisions.scheme_year_id` column, neither of which has existed since Phase 7 replaced
+    # the original one-Timetable-per-Division sketch with TimetableSession.division_ids (see
+    # docs/PROJECT_AUDIT.md's Timetable model docstring) — this function was never updated to
+    # match and would 500 on every delete once real Division/Timetable rows existed, which
+    # Phase 10's testing is what actually exercised this path for the first time.
+    division_ids = set(session.scalars(select(Division.id).where(Division.course_scheme_id == scheme_id)))
+    if not division_ids:
         return []
 
-    rows = session.execute(
-        text(
-            "SELECT t.id FROM timetables t "
-            "JOIN divisions d ON d.id = t.division_id "
-            "WHERE d.scheme_year_id = :scheme_id AND t.status = 'published'"
-        ),
-        {"scheme_id": scheme_id},
-    ).scalars().all()
-    return [f"timetable #{row}" for row in rows]
-
-
-def _existing_table_names(session: Session) -> set[str]:
-    # Looks at what tables actually exist, so the guard above works before and after the timetable phase.
-    return set(inspect(session.get_bind()).get_table_names())
+    published_sessions = session.execute(
+        select(Timetable.id, TimetableSession.division_ids)
+        .join(TimetableSession, TimetableSession.timetable_id == Timetable.id)
+        .where(Timetable.status == TimetableStatus.PUBLISHED)
+    ).all()
+    blocking_ids = {row.id for row in published_sessions if division_ids & set(row.division_ids)}
+    return [f"timetable #{timetable_id}" for timetable_id in sorted(blocking_ids)]
 
 
 def _storage_headers() -> dict[str, str]:
