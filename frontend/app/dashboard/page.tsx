@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { LiveClock } from "@/components/dashboard/live-clock";
 import { StatCard, StatCardSkeleton } from "@/components/dashboard/stat-card";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export default function StatsOverviewPage() {
       )}
 
       <section aria-label="Counts" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <LiveClock />
         {stats ? (
           <>
             <StatCard
