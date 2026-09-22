@@ -71,3 +71,27 @@ class SchemeDetail(SchemeSummary):
     # (labs folded into their theory courses) that the Course rows were built from.
     content: dict[str, Any]
     semesters: list[SemesterRows]
+
+
+class CourseListItem(BaseModel):
+    # One materialized Course row, for the Phase 9 dashboard's course-by-semester dropdown —
+    # distinct from CourseRow above, which is the pre-save shape used while editing a scheme.
+    id: int
+    scheme_id: int
+    code: str
+    name: str
+    credit_hours: int | None
+    semester: int | None
+    has_lab: bool
+    lab_credit_hours: int | None
+
+
+class NewSubjectCreate(BaseModel):
+    # The Phase 9 dashboard's "add a new subject" quick-create, for when the official
+    # Course Scheme hasn't been uploaded yet (docs/PROJECT_ARCHITECTURE.md §11.2).
+    program_id: int
+    semester: int = Field(ge=1, le=8)
+    name: str = Field(min_length=1, max_length=200)
+    credit_hours: int | None = Field(default=None, ge=0, le=20)
+    has_lab: bool = False
+    lab_credit_hours: int | None = Field(default=None, ge=0, le=20)

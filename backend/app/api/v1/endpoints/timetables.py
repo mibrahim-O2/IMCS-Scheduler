@@ -1,15 +1,23 @@
-"""Timetable endpoints: trigger a real GA generation, list, and view detail.
+"""Timetable endpoints: trigger a real GA generation, list, view detail, and export.
 
 Calls scheduler/engine.py and contains no scheduling logic of its own — this
 file's job is turning a request into a call into the engine, and turning the
 engine's result into database rows and a response
 (docs/PROJECT_ARCHITECTURE.md §4, §6, §9).
+
+`run_generation()` is the one place that actually calls the engine and saves its result —
+both this file's own POST /generate and the Phase 9 data-entry dashboard's
+POST /divisions/{id}/finalize (app/api/v1/endpoints/divisions.py) call it, so there is one
+save path, not two copies of the same logic.
 """
 
+import io
 from collections import defaultdict
 
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
 from app.models import (
@@ -34,6 +42,7 @@ from app.schemas.timetable import (
 from app.scheduler.chromosome import DAYS, TIME_SLOTS
 from app.scheduler.constraints.hard import describe
 from app.scheduler.engine import GaSettings, generate_timetable
+from app.services import export_service
 
 router = APIRouter(prefix="/timetables")
 
@@ -51,18 +60,12 @@ def bscs_division_ids(db: DbSession) -> list[int]:
     )
 
 
-@router.post("/generate", response_model=GenerateResponse, status_code=status.HTTP_201_CREATED)
-def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
-    # Runs the real GA against real database data and saves the result as a draft
-    # timetable — draft, not published, because a human should review it first
-    # (docs/PROJECT_ARCHITECTURE.md §3.7).
-    division_ids = payload.division_ids or bscs_division_ids(db)
-    if not division_ids:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No BSCS divisions found — run the seed scripts first.")
-
-    settings = GaSettings(
-        seed=payload.seed, population_size=payload.population_size, max_generations=payload.max_generations
-    )
+def run_generation(db: Session, division_ids: list[int], settings: GaSettings, label: str) -> GenerateResponse:
+    # The one place that calls the real GA and saves its result as a draft Timetable +
+    # TimetableSession rows — draft, not published, because a human should review it first
+    # (docs/PROJECT_ARCHITECTURE.md §3.7). Both POST /generate below and the Phase 9
+    # per-division "Finalize" flow (divisions.py) call this instead of each doing their own
+    # engine call and save, so there is exactly one save path to keep correct.
     try:
         result = generate_timetable(db, division_ids, settings)
     except ValueError as exc:
@@ -72,9 +75,8 @@ def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
         describe(violation) for found in result.final_violations.values() for violation in found
     ]
 
-    default_label = "BSCS Part-I to Part-IV (Morning)"
     timetable = Timetable(
-        label=default_label if payload.division_ids is None else f"BSCS ({len(division_ids)} divisions)",
+        label=label,
         status=TimetableStatus.DRAFT,
         algorithm_version=settings.as_dict()["algorithm_version"],
         generation_params={**settings.as_dict(), "division_ids": division_ids},
@@ -87,7 +89,7 @@ def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
     db.flush()
 
     for gene, requirement in zip(result.chromosome, result.requirements, strict=True):
-        label, start, end = TIME_SLOTS[gene.slot_index]
+        _, start, end = TIME_SLOTS[gene.slot_index]
         db.add(
             TimetableSession(
                 timetable_id=timetable.id,
@@ -116,6 +118,22 @@ def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
         session_count=len(result.chromosome),
         conflict_list=conflict_list,
     )
+
+
+@router.post("/generate", response_model=GenerateResponse, status_code=status.HTTP_201_CREATED)
+def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
+    # Runs the real GA against real database data, defaulting to every BSCS division when
+    # none are named — see run_generation() above for the actual engine call and save.
+    division_ids = payload.division_ids or bscs_division_ids(db)
+    if not division_ids:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No BSCS divisions found — run the seed scripts first.")
+
+    settings = GaSettings(
+        seed=payload.seed, population_size=payload.population_size, max_generations=payload.max_generations
+    )
+    default_label = "BSCS Part-I to Part-IV (Morning)"
+    label = default_label if payload.division_ids is None else f"BSCS ({len(division_ids)} divisions)"
+    return run_generation(db, division_ids, settings, label)
 
 
 @router.get("", response_model=list[TimetableSummary])
@@ -186,6 +204,24 @@ def get_timetable(timetable_id: int, db: DbSession) -> TimetableDetail:
         generation_params=timetable.generation_params,
         conflict_list=timetable.conflict_list,
         divisions=division_schedules,
+    )
+
+
+@router.get("/{timetable_id}/export")
+def export_timetable(timetable_id: int, db: DbSession) -> StreamingResponse:
+    # Renders a saved timetable to a .docx file and streams it straight back — nothing is
+    # written to disk or kept between requests, so a re-export always reflects the current
+    # database state (docs/PROJECT_ARCHITECTURE.md §9).
+    timetable = db.get(Timetable, timetable_id)
+    if timetable is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Timetable {timetable_id} does not exist.")
+
+    document_bytes = export_service.build_timetable_document(db, timetable)
+    filename = f"timetable-{timetable_id}.docx"
+    return StreamingResponse(
+        io.BytesIO(document_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

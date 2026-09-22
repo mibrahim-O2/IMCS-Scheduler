@@ -13,9 +13,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import DbSession
-from app.models import CourseScheme, Program
+from app.models import Course, CourseScheme, Program
 from app.schemas.course_scheme import (
+    CourseListItem,
     ExtractionResponse,
+    NewSubjectCreate,
     SchemeCreate,
     SchemeDetail,
     SchemeSummary,
@@ -23,6 +25,17 @@ from app.schemas.course_scheme import (
 from app.services import course_scheme_service as service
 
 router = APIRouter(prefix="/course-schemes")
+
+# A separate router for /api/v1/courses — a different resource (materialized Course rows)
+# from /course-schemes (the uploaded documents they're materialized from), so it gets its
+# own prefix even though both live in this file for now.
+courses_router = APIRouter(prefix="/courses")
+
+# scheme_year used for the per-program "manually added subjects" scheme the Phase 9
+# data-entry dashboard's "add a new subject" quick-create writes into when no official
+# Course Scheme has been uploaded yet for that program. Kept inactive, like the Phase 7
+# synthetic BSCS scheme, so it never appears in the Course Scheme upload/list UI.
+MANUAL_SCHEME_YEAR = 9999
 
 
 @router.post("/extract", response_model=ExtractionResponse)
@@ -154,6 +167,84 @@ def delete_scheme(scheme_id: int, db: DbSession) -> SchemeSummary:
     db.commit()
     db.refresh(scheme)
     return _to_summary(scheme, program, _counts_for(db, scheme.id))
+
+
+@courses_router.get("", response_model=list[CourseListItem])
+def list_courses(db: DbSession, program_id: int, semester: int) -> list[CourseListItem]:
+    # Course dropdown for the Phase 9 data-entry dashboard: every course for this program's
+    # currently active Course Scheme, plus anything added through "add a new subject" below
+    # (its manual scheme is deliberately inactive, so it's included by scheme_year, not by
+    # is_active — see MANUAL_SCHEME_YEAR's comment).
+    scheme_ids = db.scalars(
+        select(CourseScheme.id).where(
+            CourseScheme.program_id == program_id,
+            (CourseScheme.is_active.is_(True)) | (CourseScheme.scheme_year == MANUAL_SCHEME_YEAR),
+        )
+    ).all()
+    if not scheme_ids:
+        return []
+
+    rows = db.scalars(
+        select(Course)
+        .where(Course.scheme_id.in_(scheme_ids), Course.semester == semester)
+        .order_by(Course.name)
+    ).all()
+    return [
+        CourseListItem(
+            id=row.id, scheme_id=row.scheme_id, code=row.code, name=row.name, credit_hours=row.credit_hours,
+            semester=row.semester, has_lab=row.has_lab, lab_credit_hours=row.lab_credit_hours,
+        )
+        for row in rows
+    ]
+
+
+@courses_router.post("", response_model=CourseListItem, status_code=status.HTTP_201_CREATED)
+def add_subject(payload: NewSubjectCreate, db: DbSession) -> CourseListItem:
+    # "Add a new subject" without a full Course Scheme upload — creates (or reuses) this
+    # program's manual scheme, then one Course row in it, with a generated code since no
+    # official document names one.
+    program = db.get(Program, payload.program_id)
+    if program is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Program {payload.program_id} does not exist.")
+
+    scheme = db.scalar(
+        select(CourseScheme).where(
+            CourseScheme.program_id == payload.program_id, CourseScheme.scheme_year == MANUAL_SCHEME_YEAR
+        )
+    )
+    if scheme is None:
+        scheme = CourseScheme(
+            program_id=payload.program_id,
+            scheme_year=MANUAL_SCHEME_YEAR,
+            is_active=False,
+            content={
+                "note": (
+                    "Subjects added one at a time through the build-timetable dashboard "
+                    "(Phase 9) — not an official Course Scheme upload."
+                )
+            },
+        )
+        db.add(scheme)
+        db.flush()
+
+    taken_codes = set(db.scalars(select(Course.code).where(Course.scheme_id == scheme.id)))
+    course = Course(
+        scheme_id=scheme.id,
+        code=service.make_course_code(payload.name, taken_codes),
+        name=payload.name,
+        credit_hours=payload.credit_hours,
+        semester=payload.semester,
+        has_lab=payload.has_lab,
+        lab_credit_hours=payload.lab_credit_hours if payload.has_lab else None,
+    )
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+    return CourseListItem(
+        id=course.id, scheme_id=course.scheme_id, code=course.code, name=course.name,
+        credit_hours=course.credit_hours, semester=course.semester, has_lab=course.has_lab,
+        lab_credit_hours=course.lab_credit_hours,
+    )
 
 
 def _parse_payload(payload: str) -> SchemeCreate:
