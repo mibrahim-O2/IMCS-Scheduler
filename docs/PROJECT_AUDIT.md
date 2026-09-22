@@ -1,7 +1,11 @@
 # IMCS Scheduler — Project Audit
 
-**Snapshot date:** 2026-09-19, at the end of Phase 8.1 (lab room identity fixed to the
-five real labs, Lab A-E) on top of Phase 8 — full 8-division GA convergence. Phase 7 wired the real GA end to end (database models, seed data
+**Snapshot date:** 2026-09-22, at the end of Phase 9 — a general-purpose data-entry
+dashboard (`/build-timetable`) so an admin can build up the course/teacher/room
+assignments the GA needs for ANY program/shift/part/semester/group by hand, not just
+BSCS Morning (which still gets its data from the Phase 7 seed script). On top of Phase
+8.1 (lab room identity fixed to the five real labs, Lab A-E) and Phase 8 — full
+8-division GA convergence. Phase 7 wired the real GA end to end (database models, seed data
 from `docs/timetable.json`, the production scheduler package with all 9 hard
 constraints, the `/api/v1/timetables` endpoints, a real frontend page) but the
 full BSCS Part-I to Part-IV problem stalled 1-20 violations short of zero.
@@ -35,8 +39,12 @@ backend/
 │       │                                       course_schemes, courses.
 │       ├── 722044599067_..._lab_....py      real (Phase 7) — divisions, division_courses, lab_batches,
 │       │                                       timetables, timetable_sessions.
-│       └── 2ef363712bc6_drop_division_lab_room_id_...py   real (Phase 8.1) — drops divisions.lab_room_id
-│                                              (labs are a shared pool, not per-division)
+│       ├── 2ef363712bc6_drop_division_lab_room_id_...py   real (Phase 8.1) — drops divisions.lab_room_id
+│       │                                      (labs are a shared pool, not per-division)
+│       └── 6546114ebf29_phase9_course_semester_....py     real (Phase 9) — courses.semester (+ backfill),
+│                                              division_courses.lecture_room_id/lab_room_id,
+│                                              divisions.assignments_locked_at, divisions' unique key
+│                                              widened to include semester
 ├── requirements.txt                      real — pinned deps (fastapi, sqlalchemy, alembic, psycopg,
 │                                            pdfplumber, python-docx, httpx, pytesseract, pdf2image)
 ├── app/
@@ -58,35 +66,46 @@ backend/
 │   │   ├── program.py                    real — Department, Program, ProgramLevel enum
 │   │   ├── classroom.py                  real — Classroom, ClassroomType enum
 │   │   ├── teacher.py                    real — Teacher (no auth fields, by design)
-│   │   ├── course.py                     real — Course (materialized from CourseScheme.content)
+│   │   ├── course.py                     real — Course (materialized from CourseScheme.content), plus
+│   │   │                                    a Phase 9 `semester` column for the dashboard's course filter
 │   │   ├── course_scheme.py              real — CourseScheme (JSONB content column)
-│   │   ├── division.py                   real (Phase 7) — Division, LabBatch, DivisionCourse
+│   │   ├── division.py                   real (Phase 7, extended Phase 9) — Division (now with
+│   │   │                                    `assignments_locked_at`), LabBatch, DivisionCourse (now with
+│   │   │                                    per-assignment `lecture_room_id`/`lab_room_id`)
 │   │   └── timetable.py                  real (Phase 7) — TimetableStatus, Timetable, TimetableSession
 │   ├── schemas/
 │   │   ├── program.py                    real — Pydantic schemas for the programs endpoint
-│   │   ├── course_scheme.py              real — Pydantic schemas for course scheme upload/list/detail
+│   │   ├── course_scheme.py              real — scheme upload/list/detail + Phase 9 course-list/add-subject
 │   │   ├── dashboard.py                  real — Pydantic schema for the stats endpoint
-│   │   └── timetable.py                  real (Phase 7) — generate/list/detail schemas
+│   │   ├── timetable.py                  real (Phase 7) — generate/list/detail schemas
+│   │   ├── teacher.py                    real (Phase 9) — TeacherCreate/TeacherRead
+│   │   ├── classroom.py                  real (Phase 9) — ClassroomCreate/ClassroomRead
+│   │   └── division.py                   real (Phase 9) — Division/CourseAssignment create/read/update
 │   ├── api/
 │   │   ├── deps.py                       real — shared DbSession dependency
 │   │   └── v1/
-│   │       ├── router.py                 real — mounts programs, course_schemes, dashboard, timetables
+│   │       ├── router.py                 real — mounts every endpoint router below
 │   │       └── endpoints/
 │   │           ├── programs.py           real — GET /api/v1/programs
-│   │           ├── course_schemes.py     real — extract/save/list/detail/delete endpoints
+│   │           ├── course_schemes.py     real — extract/save/list/detail/delete, plus Phase 9's
+│   │           │                            /courses (list-by-semester, add-a-new-subject)
 │   │           ├── dashboard.py          real — GET /api/v1/dashboard/stats
-│   │           ├── classrooms.py         placeholder — no Classroom endpoint yet
-│   │           ├── divisions.py          placeholder — no Division endpoint yet
-│   │           ├── teachers.py           placeholder — no Teacher endpoint yet
-│   │           └── timetables.py         real (Phase 7) — POST /generate, GET "", GET /{id}
+│   │           ├── classrooms.py         real (Phase 9) — list/create Classroom
+│   │           ├── divisions.py          real (Phase 9) — create/list/get Division; list/add/edit/remove
+│   │           │                            a draft DivisionCourse; live constraint-9 check; finalize
+│   │           ├── teachers.py           real (Phase 9) — list/create/get Teacher
+│   │           └── timetables.py         real (Phase 7) — POST /generate, GET "", GET /{id},
+│   │                                        GET /{id}/export (Phase 9, Word .docx)
 │   ├── services/
 │   │   ├── course_scheme_service.py      real — PDF/Word text extraction (+ OCR fallback), Supabase
 │   │   │                                    Storage upload/delete, lab-pairing materialization logic
 │   │   ├── dashboard_service.py          real — the counts query behind the stats endpoint
-│   │   └── export_service.py             placeholder — Word/PDF timetable export, not built
+│   │   └── export_service.py             real (Phase 9) — renders a saved Timetable to a .docx
+│   │                                        (IMCS logo header, one weekly-grid table per division)
 │   └── scheduler/                        **the GA package — see §5 "Genetic Algorithm file map" below**
-│       ├── chromosome.py                 real (Phase 7) — Gene, SessionRequirement, DivisionInfo,
-│       │                                    load_divisions, build_session_requirements from the DB
+│       ├── chromosome.py                 real (Phase 7, extended Phase 9) — Gene, SessionRequirement,
+│       │                                    DivisionInfo, build_session_requirements now honours a
+│       │                                    per-assignment pre-assigned lecture/lab room when set
 │       ├── fitness.py                    real (Phase 7) — fitness_from_violations
 │       ├── engine.py                     real (Phase 7, extended Phase 8) — evolve() loop, stagnation
 │       │                                    detection + partial-population restarts, half-greedy /
@@ -136,7 +155,9 @@ frontend/
 │   ├── scheme-text-parser.ts             real — parses the university portal's table layout for
 │   │                                        the "Fill rows from extracted text" button
 │   ├── dashboard.ts                      real — stats types + API call
-│   └── timetables.ts                     real (Phase 7) — generate/list/detail types + API calls
+│   ├── timetables.ts                     real (Phase 7) — generate/list/detail types + API calls
+│   └── build-timetable.ts                real (Phase 9) — Teacher/Classroom/Division/CourseAssignment
+│                                            types + every /teachers, /classrooms, /divisions, /courses call
 └── public/imcs-logo.png                  real — the IMCS crest used in the header and homepage
 ```
 
@@ -163,32 +184,31 @@ including from a phone over the real local network, not just localhost.
 | 7 | Real GA integration: Division/Timetable DB models + migration, seed from `docs/timetable.json`, production scheduler package (all 9 hard constraints, lazy violation messages, stagnation detection + restarts), `/api/v1/timetables` endpoints, `/timetables` frontend page, tested end to end incl. over LAN from a phone | Done — see §4, §8 for honest results at full scale |
 | 8 | Full 8-division convergence: greedy constructive seeding for half of every fresh population (Technique 1 of 3; Techniques 2-3 deliberately not needed). Full BSCS problem 100/100 converged at generation 1 | Done — see §4, §11 |
 | 8.1 | Lab room identity: the department's five real labs (Lab A-E, shared by every division) replace six invented "Room NN (Lab)" rooms; labs are a shared pool the GA assigns per session; stale timetables removed. Convergence unchanged (100/100, generation 1) | Done — see §4, §12 |
+| 9 | General-purpose data-entry dashboard (`/build-timetable`): real Teacher/Classroom CRUD, per-course room pre-assignment (fixes the GA's search, not just a UI nicety), a live constraint-9 warning at data-entry time, finalize-and-generate, real Word export, a dashboard clock widget | Done — see §13 |
 
 ---
 
 ## 3. Current database state
 
-Confirmed by direct query against the live Supabase database on 2026-09-19,
-after the Phase 7 seed and the real `POST /api/v1/timetables/generate` runs of
-Phases 7-8:
+Confirmed by direct query against the live Supabase database on 2026-09-22,
+after Phases 7-9 (Phase 9 added no new BSCS rows — its own test data was
+created and then deleted again as part of its own testing, §13):
 
 | Table | Row count | Populated with |
 |---|---|---|
 | `departments` | 3 | Computer Science, Artificial Intelligence, Mathematics |
 | `programs` | 18 | All levels for all 3 departments; 3 are `is_schedulable=true` (the BS programs) |
-| `classrooms` | 11 | 6 lecture rooms (Room 01-06, from `docs/timetable.json`) + the 5 real labs **Lab A, Lab B, Lab C, Lab D, Lab E** (type `lab`, shared by every division — confirmed by the department, not read from the JSON). Phase 7-8 had 12: six of them were invented "Room NN (Lab)" rows, removed in Phase 8.1 |
-| `teachers` | 29 | Real full names, `availability.days` derived from actual teaching days in the JSON |
-| `course_schemes` | 2 (1 active) | The original BSCS 2024 upload (active, 45 courses), plus a synthetic `scheme_year=2026, is_active=false` scheme that exists only to hold real-timetable-derived Course rows (kept out of the Course Scheme upload UI on purpose — that UI is for official documents) |
-| `courses` | 68 | 45 from the 2024 scheme (unchanged) + 23 from the synthetic scheme |
-| `divisions` | 8 | BSCS Part-I to Part-IV, Morning shift, PM/PE split each |
-| `division_courses` | 43 | Real course/teacher assignments per division, incl. joint PM/PE subjects |
-| `timetables` | 1 | **#17**: a full 8-division BSCS Part-I to Part-IV draft, converged, generated through the real API in Phase 8.1 with the corrected labs. The seven older timetables (#1-7) placed labs in the invented rooms and were deleted as stale test data (§12) |
-| `timetable_sessions` | 132 | All belonging to #17 |
+| `classrooms` | 11 | 6 lecture rooms (Room 01-06, from `docs/timetable.json`) + the 5 real labs **Lab A, Lab B, Lab C, Lab D, Lab E** (type `lab`, shared by every division). Phase 9 added `POST /api/v1/classrooms` to create more of either type through the dashboard, but none were kept in this snapshot |
+| `teachers` | 29 | Real full names, `availability.days` derived from actual teaching days in the JSON. Phase 9 added `POST /api/v1/teachers` to add more through the dashboard |
+| `course_schemes` | 2 (1 active) | The original BSCS 2024 upload (active, 45 courses, `applies_to_part` not yet added — that's Phase 10 scope), plus a synthetic `scheme_year=2026, is_active=false` scheme holding real-timetable-derived Course rows |
+| `courses` | 68 | 45 from the 2024 scheme (`semester` backfilled from the scheme's own semester grouping, Phase 9) + 23 from the synthetic scheme (`semester` left null — see §4/§9 history). Phase 9 added `POST /api/v1/courses` ("add a new subject") for programs with no upload yet |
+| `divisions` | 8 | BSCS Part-I to Part-IV, Morning shift, PM/PE split each. Phase 9's `POST /api/v1/divisions` can create more for any program/part/semester/shift/group (its own test divisions for BS(AI) and Mathematics were deleted after testing, §13) |
+| `division_courses` | 43 | Real course/teacher assignments per division, incl. joint PM/PE subjects. Two columns added in Phase 9, both null for all 43 existing rows (BSCS still relies on `Division.home_room_id` and the shared lab pool, unchanged): `lecture_room_id` (a per-course room pre-assignment) and `lab_room_id` (a per-course fixed lab) |
+| `timetables` / `timetable_sessions` | 4 / 528 | Four independently-generated full 8-division BSCS runs, all converged (132 sessions each); none from Phase 9 testing remain |
 
-**Timetable #17 is independently verified** (Phase 8.1, §12): its 132 saved rows
-were re-checked by code that shares nothing with the scheduler — zero rule
-violations, labs only in Lab A-E, and all 59 (part, section, subject, lab?)
-groups match `docs/timetable.json` in session count and teacher.
+`Division.assignments_locked_at` (Phase 9) is null on all 8 BSCS divisions —
+they were seeded directly, never built through the `/build-timetable` flow,
+so nothing has ever locked them.
 
 ---
 
@@ -364,8 +384,8 @@ only through the production package.
 - **Authentication** — faculty-only Google sign-in via Supabase Auth is
   planned (per `docs/PROJECT_ARCHITECTURE.md` §13) but not started; no auth
   fields exist on any model, by design.
-- **Word/PDF export of a generated timetable** — `export_service.py` is a
-  docstring-only placeholder.
+- **PDF export of a generated timetable** — Phase 9 built Word (.docx) only,
+  per that phase's explicit scope; `export_service.py` has no PDF path.
 - **The live/soft-constraint dashboard** (teacher/room availability derived
   from real generated timetables) — the current stats page is counts-only
   and explicitly does not claim to show availability (per Phase 3's scope
@@ -373,9 +393,12 @@ only through the production package.
 - **Soft constraints** — `constraints/soft.py` is still a docstring-only
   placeholder; only hard constraints exist anywhere in the GA work so far,
   by explicit scope for this phase.
-- **BS(AI) and Evening-shift scheduling** — explicitly out of scope for
-  Phase 7; the GA package and seed data cover BSCS Part-I to Part-IV,
-  Morning shift only.
+- **BS(AI) and Evening-shift scheduling** — the *tool* to enter their data
+  now exists (`/build-timetable`, Phase 9, tested against real BS(AI) and
+  Mathematics divisions), but no one has entered their real course/teacher
+  data yet, and Evening shift specifically still has no real
+  teacher-availability data behind it at all — Phase 9 built the general
+  mechanism, it did not fill either of these in, by explicit scope.
 - **A defined time budget and readable conflict reporting for a run that
   doesn't converge** (this was "Technique 3" of Phase 8, deliberately not
   built because seeding made it unnecessary on current data). Today a
@@ -387,11 +410,16 @@ only through the production package.
   as a whole, not split into sub-batches.
 - **Reviewing/publishing a draft timetable** — every generated `Timetable`
   is created with `status="draft"`; there's no UI or endpoint yet to move
-  one to `published`, edit it, or compare versions.
-- **Classroom and Teacher admin UI** — both tables are now populated by the
-  Phase 7 seed script, but there's still no page or endpoint for adding,
-  editing, or browsing them directly (only the timetables page reads them,
-  indirectly, via a generated schedule).
+  one to `published`, edit it, or compare versions. Phase 9's "Finalize"
+  locks the *assignment list*, not the resulting timetable's status.
+- **Browsing/editing Teachers and Classrooms after creation** — Phase 9
+  added real `POST`/`GET` endpoints and inline quick-create from within
+  `/build-timetable`, but there's still no standalone admin page to list,
+  edit, or delete a Teacher or Classroom on its own.
+- **Un-finalizing a division** — once `/build-timetable` locks a division's
+  assignment list, nothing can unlock it again; fixing a mistake in a
+  finalized division needs direct database access. Not built, not
+  requested this phase.
 
 ---
 
@@ -750,3 +778,123 @@ the real schedule never needs more than 2 labs at once, and the search has 5.
 
 The UI test created two more timetables; both were deleted, keeping only #17. State now:
 1 timetable, 132 sessions, 11 classrooms.
+
+---
+
+## 13. Phase 9 testing — commands run and actual results
+
+Run 2026-09-22 against the live Supabase database and a locally running backend/frontend.
+
+### Migration
+
+`alembic upgrade head` applied `6546114ebf29` cleanly; `courses.semester` backfilled 45
+rows (the active BSCS 2024 scheme, one row per real semester 1-8) and left 23 rows null
+(the Phase 7 synthetic scheme, by design — see §3). `division_courses` gained
+`lecture_room_id`/`lab_room_id` (both null on all 43 existing BSCS rows). `divisions`
+gained `assignments_locked_at` (null on all 8) and its unique key widened to include
+`semester`, confirmed with no conflict against the 8 existing rows. Round-tripped
+(`downgrade -1` then `upgrade head` again): identical result both times.
+
+### Self-test — real API calls, BS Artificial Intelligence and BS Mathematics
+
+Chosen deliberately because neither program had any Division/DivisionCourse data before
+this phase — the actual test of "general-purpose, not just BSCS":
+
+| # | What was run | Result |
+|---|---|---|
+| 1 | Create 2 teachers, 1 lecture room via `POST /teachers`, `POST /classrooms` | 201 each, real rows created |
+| 2 | `POST /divisions` for BSAI Part-I (program 8, part 1, semester 1, Morning, PM), called twice | Both calls returned the **same** division id — confirmed idempotent get-or-create |
+| 3 | `POST /courses` "add a new subject" (Introduction to AI, credit_hours 3, has_lab true, lab_credit_hours 1) | 201, real Course row, auto-coded "ITA" |
+| 4 | `POST /divisions/{id}/courses` — course above, teacher 1, lecture room, **lab_room_id = Lab A** | 201, assignment created with the pre-assigned lab |
+| 5 | `GET /divisions/{id}/courses/check-teacher?teacher_id=<teacher1>&course_id=<other course>` | `{"conflict": true, "message": "... already assigned Introduction to AI ... constraint 9"}` |
+| 6 | Deliberately `POST` a second assignment reusing teacher 1 on a different course anyway | **HTTP 409**, same message — server-side enforcement confirmed, not just the live check |
+| 7 | Add the second course with teacher 2 instead, then `POST /divisions/{id}/finalize` | 201, **converged, generation 1, 7 sessions**, `conflict_list: []` |
+| 8 | Query `TimetableSession` rows for the finalized run | The lab session for course "Introduction to AI" sits in **Lab A** — the pre-assigned room, never reassigned |
+| 9 | `PATCH`/`DELETE`/`POST` an assignment on the now-locked division | All three return **HTTP 409** naming the lock timestamp — confirmed the lock is real, not cosmetic |
+| 10 | `POST /divisions/{id}/finalize` again on the same (already-locked) division | 201, a **second** Timetable row, same lab room respected again; the lock timestamp did not change — regenerating from a fixed list is allowed, editing the list is not |
+| 11 | `GET /timetables/{id}/export` | HTTP 200, `Content-Type: application/vnd.openxmlformats...wordprocessingml.document`, valid non-empty .docx (~1.7MB, dominated by the embedded logo) |
+| 12 | Opened the exported .docx with `python-docx` | Real heading, status line, one table per division with real course/teacher/room text (`ITA — Introduction to AI`, `Dr. Test Alpha`, `Lab A`, ...); header contains an embedded image (the logo) |
+| 13 | Repeated steps 2-9 for **BS Mathematics** (program 15, no PM/PE group) | Division created with `group: null`, label `"BS Mathematics Part-I (Morning)"` (no PM/PE suffix) — confirmed the dashboard doesn't force a group where none exists |
+| 14 | Lab-room validation: course with `has_lab=true` and no `lab_room_id`; `lab_room_id` pointed at a lecture room; `lab_room_id` given for a `has_lab=false` course | Three clear 400s: `"... has a lab — choose a lab room."`, `"AI Room 01 is not a lab room."`, `"... has no lab — remove the lab room."` |
+
+### Regression: Phase 8/8.1's full BSCS convergence, after Part 2's chromosome.py change
+
+100 seeded `engine.evolve()` runs against all 8 real BSCS divisions: **100/100 converged,
+all at generation 1**, mean 0.29s — matching Phase 8.1's own number (mean 0.52s) within
+normal run-to-run variance, confirming the new `lecture_room_id`/`lab_room_id` fallback
+logic (both null for every real BSCS row) changed nothing about BSCS's own behaviour.
+
+### UI testing — desktop and mobile (headless Edge, Puppeteer)
+
+Two real problems were **found and fixed** during this testing, and one environmental
+issue was found and worked around:
+
+- **Bug found and fixed**: the "Has a lab" checkbox in "add a new subject" didn't reset
+  after a successful quick-create, so the *next* quick-added subject silently inherited
+  `has_lab=true` from the previous one. Fixed by resetting all the new-subject fields on
+  success (`course-assignment-form.tsx`).
+- **Made more robust**: `handleFinalize` originally hand-built the post-finalize `division`
+  object's lock timestamp on the client instead of asking the server. Changed to re-fetch
+  the division from `GET /divisions/{id}` after finalize, so the UI always reflects the
+  server's actual lock state rather than an optimistic guess.
+- **Environmental issue, not an app bug**: an unrelated Node project on this machine
+  (`D:\Project\My_Portfolio`, not part of this repository) was independently running its
+  own dev server also bound to port 3001, and Windows let both processes listen
+  simultaneously (one on the IPv4 socket, one on IPv6). Requests to `localhost:3001`
+  landed on whichever process the OS picked, intermittently serving a *completely
+  unrelated portfolio site* instead of this app and producing confusing, non-reproducible
+  test failures. Diagnosed via `netstat`/`Get-CimInstance Win32_Process`, fixed by moving
+  this app's dev server to port 3002 — the other project's process was left untouched.
+
+With that resolved, a clean isolated run (real headless browser, not curl) confirmed end
+to end: program/shift/part/semester/group selection; starting a division; the full
+add-course flow with inline quick-create for a subject, a teacher (with day checkboxes)
+and a lecture room; the **live constraint-9 warning appearing in the UI** after picking a
+teacher already assigned elsewhere in the division; finalize producing a **"Converged in 1
+generations..."** banner with a working **"Download Word file"** link; and — confirmed
+after a real round-trip re-fetch (observed taking up to ~7 seconds on this remote-database
+setup) — the Edit/Remove buttons disappearing and a **"Locked"** badge appearing once the
+division is actually finalized server-side. The dashboard's live clock was confirmed
+ticking (two samples one second apart differ).
+
+**What this phase's UI testing does not include**: a single combined-viewport script run
+producing a clean pass/fail summary for the report (the debugging above happened across
+several focused isolated scripts once the port collision was found, not one final
+combined run) — the manual testing tables below are built from those isolated,
+individually-confirmed steps.
+
+### Desktop manual testing (1280×900)
+
+| Step | Action | Expected | Actual |
+|---|---|---|---|
+| D1 | Open `/build-timetable`, pick Program=BS Mathematics, Shift=Morning, Part=Part-I, Semester=First | No Group field shown | Confirmed — Mathematics hides the PM/PE picker |
+| D2 | Click "Start this division" | Division created/found, form appears | `POST /divisions` 201, assignment form rendered |
+| D3 | "+ Add a new subject", fill name + credit hours + has-lab, "Create subject" | New course appears selected in the Course dropdown | Confirmed (after the real Supabase round-trip, ~2-2.5s) |
+| D4 | "+ Add a new teacher", fill name + availability days, "Create teacher" | New teacher appears selected | Confirmed |
+| D5 | "+ Add a new room", "Create room"; pick a Lab room (shown only because the course has a lab) | Room created and selected; lab dropdown only shows Lab A-E | Confirmed |
+| D6 | "Add to list" | Draft row appears, count increments | Confirmed |
+| D7 | Add a second course, pick the **same** teacher as step D4 | Live warning: "... already assigned ... constraint 9" | Confirmed, shown inline before "Add to list" is even clicked |
+| D8 | Pick a different teacher instead, finish adding course 2 | Second draft row appears | Confirmed |
+| D9 | Click "Finalize" | Success banner with generation count and a Word download link | Confirmed: "Converged in 1 generations, ... Download Word file" |
+| D10 | Wait for the page to settle, look at the division header and the draft rows | "Locked" badge shown, Edit/Remove buttons gone | Confirmed, ~7s after the banner (server re-fetch) |
+| D11 | Click the Word download link | A real .docx downloads with the real course/teacher/room data | Confirmed (§ self-test 11-12) |
+| D12 | Open `/dashboard` | A ticking clock card next to the stat cards | Confirmed, time text changes second to second |
+
+### Mobile manual testing (390×844, touch viewport)
+
+| Step | Action | Expected | Actual |
+|---|---|---|---|
+| M1 | Same D1-D9 flow at 390×844 | Same behaviour, no horizontal page scroll | Confirmed clean in the headless-mobile pass captured before the port-collision issue was found; not independently re-run after the port fix given time spent diagnosing it — the desktop pass above is the one confirmed clean end to end post-fix |
+| M2 | Inline quick-create forms (subject/teacher/room) at mobile width | Fields stack, no overflow, buttons stay tappable | Confirmed in the same earlier mobile pass (screenshot `p9-mobile-draft-list.png`) |
+| M3 | `/dashboard` clock card at mobile width | Fits inside the stat-card grid, no overflow | Confirmed (same Tailwind grid as every other stat card, `grid-cols-1` below `sm:`) |
+
+**Honest note on M1-M3**: these were captured in a full-flow mobile pass that completed
+*before* the port-collision investigation began, so it is real evidence from this app (not
+the colliding portfolio site) — the app's own request log for that run shows real
+`/api/v1/...` calls throughout — but it predates the two fixes above (the has-lab reset and
+the finalize re-fetch), so it doesn't itself demonstrate the fixed behaviour on mobile.
+Desktop was re-confirmed clean after both fixes; mobile was not re-run a second time this
+phase due to time spent on the port-collision diagnosis. Nothing in the fixes is
+viewport-specific (both are plain state-management changes, not layout), so there is no
+specific reason to expect a different mobile result — but it was not independently
+re-verified, and that is stated plainly rather than assumed.
