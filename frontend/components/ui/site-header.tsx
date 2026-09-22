@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: "/schemes", label: "Course schemes" },
   { href: "/timetables", label: "Timetables" },
   { href: "/build-timetable", label: "Build timetable" },
+  { href: "/teachers", label: "Teachers" },
   { href: "/dashboard", label: "Stats overview" },
 ];
 
