@@ -44,7 +44,7 @@ class SchemeContentIn(BaseModel):
 
 class SchemeCreate(BaseModel):
     program_id: int
-    # Which Part slot this upload fills (Phase 10) — fixed by which slot the admin clicked
+    # Which Part slot this upload fills (Phase 10) fixed by which slot the admin clicked
     # in the per-Program grid, not typed by hand.
     applies_to_part: int = Field(ge=1, le=4)
     scheme_year: int = Field(ge=2000, le=2100)

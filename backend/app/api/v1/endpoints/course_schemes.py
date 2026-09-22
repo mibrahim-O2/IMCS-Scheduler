@@ -77,7 +77,7 @@ async def create_scheme(
     if program is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Program {scheme_in.program_id} does not exist.")
 
-    # A program can have only one ACTIVE scheme per Part slot (Phase 10) — the frontend's
+    # A program can have only one ACTIVE scheme per Part slot (Phase 10) the frontend's
     # per-slot "Replace" flow soft-deletes the old one first, but this check is the real
     # enforcement, not the UI. Keyed on the slot (program + Part), not the year: uploading a
     # different year into an already-filled slot is still a replacement, not a new slot.

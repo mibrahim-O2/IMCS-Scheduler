@@ -250,7 +250,7 @@ def find_blocking_timetables(session: Session, scheme_id: int) -> list[str]:
     # Fixed in Phase 10: this previously queried a `timetables.division_id` column and a
     # `divisions.scheme_year_id` column, neither of which has existed since Phase 7 replaced
     # the original one-Timetable-per-Division sketch with TimetableSession.division_ids (see
-    # docs/PROJECT_AUDIT.md's Timetable model docstring) — this function was never updated to
+    # docs/PROJECT_AUDIT.md's Timetable model docstring) this function was never updated to
     # match and would 500 on every delete once real Division/Timetable rows existed, which
     # Phase 10's testing is what actually exercised this path for the first time.
     division_ids = set(session.scalars(select(Division.id).where(Division.course_scheme_id == scheme_id)))
