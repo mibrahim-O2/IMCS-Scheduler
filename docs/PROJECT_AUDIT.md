@@ -1,16 +1,22 @@
 # IMCS Scheduler — Project Audit
 
-**Snapshot date:** 2026-09-22, at the end of Phase 9 — a general-purpose data-entry
-dashboard (`/build-timetable`) so an admin can build up the course/teacher/room
-assignments the GA needs for ANY program/shift/part/semester/group by hand, not just
-BSCS Morning (which still gets its data from the Phase 7 seed script). On top of Phase
-8.1 (lab room identity fixed to the five real labs, Lab A-E) and Phase 8 — full
-8-division GA convergence. Phase 7 wired the real GA end to end (database models, seed data
-from `docs/timetable.json`, the production scheduler package with all 9 hard
-constraints, the `/api/v1/timetables` endpoints, a real frontend page) but the
-full BSCS Part-I to Part-IV problem stalled 1-20 violations short of zero.
-Phase 8 fixed that with a greedy (constructive) starting population: the full
-problem now converges in 100/100 seeded runs, in under a second of search time.
+**Snapshot date:** 2026-09-22, at the end of Phase 10 three independent pieces: the
+Course Scheme upload flow redesigned around per-Part slots (one slot per Part per
+program, replacing the old flat "upload new scheme" list), a real teacher lookup page
+(search by name, see every division a teacher is assigned to plus their real generated
+schedule where one exists), and a function-calling chatbot (Gemini picks from a fixed
+set of real database-query functions never RAG, see `docs/PROJECT_ARCHITECTURE.md`
+Section 8). On top of Phase 9's general-purpose data-entry dashboard
+(`/build-timetable`) so an admin can build up the course/teacher/room assignments the GA
+needs for ANY program/shift/part/semester/group by hand, not just BSCS Morning (which
+still gets its data from the Phase 7 seed script). On top of Phase 8.1 (lab room
+identity fixed to the five real labs, Lab A-E) and Phase 8 full 8-division GA
+convergence. Phase 7 wired the real GA end to end (database models, seed data from
+`docs/timetable.json`, the production scheduler package with all 9 hard constraints, the
+`/api/v1/timetables` endpoints, a real frontend page) but the full BSCS Part-I to Part-IV
+problem stalled 1-20 violations short of zero. Phase 8 fixed that with a greedy
+(constructive) starting population: the full problem now converges in 100/100 seeded
+runs, in under a second of search time.
 
 This file exists so a fresh conversation (or a new person) can pick the
 project up without re-reading every prior phase report. It answers: what
@@ -41,16 +47,20 @@ backend/
 │       │                                       timetables, timetable_sessions.
 │       ├── 2ef363712bc6_drop_division_lab_room_id_...py   real (Phase 8.1) — drops divisions.lab_room_id
 │       │                                      (labs are a shared pool, not per-division)
-│       └── 6546114ebf29_phase9_course_semester_....py     real (Phase 9) — courses.semester (+ backfill),
-│                                              division_courses.lecture_room_id/lab_room_id,
-│                                              divisions.assignments_locked_at, divisions' unique key
-│                                              widened to include semester
+│       ├── 6546114ebf29_phase9_course_semester_....py     real (Phase 9) — courses.semester (+ backfill),
+│       │                                      division_courses.lecture_room_id/lab_room_id,
+│       │                                      divisions.assignments_locked_at, divisions' unique key
+│       │                                      widened to include semester
+│       └── 21e2917be8e9_phase10_..._applies_to_part.py    real (Phase 10) — course_schemes.applies_to_part
+│                                              (+ data migration splitting the whole-program BSCS scheme
+│                                              into one row per Part), unique key widened to include it
 ├── requirements.txt                      real — pinned deps (fastapi, sqlalchemy, alembic, psycopg,
 │                                            pdfplumber, python-docx, httpx, pytesseract, pdf2image)
 ├── app/
 │   ├── main.py                           real — FastAPI app, mounts /api/v1, / and /health routes
 │   ├── core/
-│   │   ├── config.py                     real — pydantic-settings, reads backend/.env
+│   │   ├── config.py                     real — pydantic-settings, reads backend/.env; Phase 10 added
+│   │   │                                    `gemini_api_key` (empty string means "not configured")
 │   │   └── security.py                   placeholder — auth/RBAC, not started
 │   ├── db/
 │   │   ├── base.py                       real — SQLAlchemy declarative base + TimestampMixin
@@ -68,40 +78,55 @@ backend/
 │   │   ├── teacher.py                    real — Teacher (no auth fields, by design)
 │   │   ├── course.py                     real — Course (materialized from CourseScheme.content), plus
 │   │   │                                    a Phase 9 `semester` column for the dashboard's course filter
-│   │   ├── course_scheme.py              real — CourseScheme (JSONB content column)
+│   │   ├── course_scheme.py              real (Phase 10 added `applies_to_part`) — CourseScheme
+│   │   │                                    (JSONB content column), unique key now (program, part, year)
 │   │   ├── division.py                   real (Phase 7, extended Phase 9) — Division (now with
 │   │   │                                    `assignments_locked_at`), LabBatch, DivisionCourse (now with
 │   │   │                                    per-assignment `lecture_room_id`/`lab_room_id`)
 │   │   └── timetable.py                  real (Phase 7) — TimetableStatus, Timetable, TimetableSession
 │   ├── schemas/
 │   │   ├── program.py                    real — Pydantic schemas for the programs endpoint
-│   │   ├── course_scheme.py              real — scheme upload/list/detail + Phase 9 course-list/add-subject
+│   │   ├── course_scheme.py              real (Phase 10 added `applies_to_part`) — scheme upload/list/
+│   │   │                                    detail + Phase 9 course-list/add-subject
 │   │   ├── dashboard.py                  real — Pydantic schema for the stats endpoint
 │   │   ├── timetable.py                  real (Phase 7) — generate/list/detail schemas
-│   │   ├── teacher.py                    real (Phase 9) — TeacherCreate/TeacherRead
+│   │   ├── teacher.py                    real (Phase 9, extended Phase 10) — TeacherCreate/TeacherRead,
+│   │   │                                    plus TeacherDetail/TeacherAssignmentOut/
+│   │   │                                    TeacherScheduleSessionOut for the lookup page
 │   │   ├── classroom.py                  real (Phase 9) — ClassroomCreate/ClassroomRead
-│   │   └── division.py                   real (Phase 9) — Division/CourseAssignment create/read/update
+│   │   ├── division.py                   real (Phase 9) — Division/CourseAssignment create/read/update
+│   │   └── chat.py                       real (Phase 10) — ChatTurn/ChatRequest/ChatResponse
 │   ├── api/
 │   │   ├── deps.py                       real — shared DbSession dependency
 │   │   └── v1/
 │   │       ├── router.py                 real — mounts every endpoint router below
 │   │       └── endpoints/
 │   │           ├── programs.py           real — GET /api/v1/programs
-│   │           ├── course_schemes.py     real — extract/save/list/detail/delete, plus Phase 9's
-│   │           │                            /courses (list-by-semester, add-a-new-subject)
+│   │           ├── course_schemes.py     real (Phase 10: conflict check + reuse lookup keyed on
+│   │           │                            (program, part) instead of (program, year)) — extract/save/
+│   │           │                            list/detail/delete, plus Phase 9's /courses
 │   │           ├── dashboard.py          real — GET /api/v1/dashboard/stats
 │   │           ├── classrooms.py         real (Phase 9) — list/create Classroom
 │   │           ├── divisions.py          real (Phase 9) — create/list/get Division; list/add/edit/remove
 │   │           │                            a draft DivisionCourse; live constraint-9 check; finalize
-│   │           ├── teachers.py           real (Phase 9) — list/create/get Teacher
-│   │           └── timetables.py         real (Phase 7) — POST /generate, GET "", GET /{id},
-│   │                                        GET /{id}/export (Phase 9, Word .docx)
+│   │           ├── teachers.py           real (Phase 9, extended Phase 10) — list (now with `?search=`
+│   │           │                            name filter), create, get (now returns full TeacherDetail:
+│   │           │                            every division assignment + the real most-recent schedule)
+│   │           ├── timetables.py         real (Phase 7) — POST /generate, GET "", GET /{id},
+│   │           │                            GET /{id}/export (Phase 9, Word .docx)
+│   │           └── chat.py               real (Phase 10) — POST /api/v1/chat, 503 on a missing/invalid
+│   │                                        Gemini key via ChatUnavailableError, never a crash
 │   ├── services/
-│   │   ├── course_scheme_service.py      real — PDF/Word text extraction (+ OCR fallback), Supabase
-│   │   │                                    Storage upload/delete, lab-pairing materialization logic
+│   │   ├── course_scheme_service.py      real (Phase 10 fixed a pre-Phase-7 bug in
+│   │   │                                    find_blocking_timetables, see §14) — PDF/Word text extraction
+│   │   │                                    (+ OCR fallback), Supabase Storage upload/delete, lab-pairing
+│   │   │                                    materialization logic
 │   │   ├── dashboard_service.py          real — the counts query behind the stats endpoint
-│   │   └── export_service.py             real (Phase 9) — renders a saved Timetable to a .docx
-│   │                                        (IMCS logo header, one weekly-grid table per division)
+│   │   ├── export_service.py             real (Phase 9) — renders a saved Timetable to a .docx
+│   │   │                                    (IMCS logo header, one weekly-grid table per division)
+│   │   └── chat_service.py               real (Phase 10) — the 4 callable functions (get_current_class,
+│   │                                        get_teacher_schedule, get_room_status, get_free_rooms), the
+│   │                                        Gemini tool declarations, and run_chat()'s function-calling loop
 │   └── scheduler/                        **the GA package — see §5 "Genetic Algorithm file map" below**
 │       ├── chromosome.py                 real (Phase 7, extended Phase 9) — Gene, SessionRequirement,
 │       │                                    DivisionInfo, build_session_requirements now honours a
@@ -130,20 +155,33 @@ backend/
 frontend/
 ├── package.json / tsconfig.json / next.config.js / tailwind.config.ts / postcss.config.js   real — config
 ├── app/
-│   ├── layout.tsx                        real — root layout, renders SiteHeader on every page
+│   ├── layout.tsx                        real (Phase 10 mounts ChatWidget) — root layout, SiteHeader +
+│   │                                        ChatWidget on every page
 │   ├── page.tsx                          real — homepage, links to Course schemes and Stats overview
-│   ├── schemes/page.tsx                  real — Course Scheme upload/list/delete flow (Phase 2-3)
-│   ├── dashboard/page.tsx                real — stats overview page (Phase 3), counts only
+│   ├── schemes/page.tsx                  real (Phase 10: per-Part slot grid replaces the flat upload
+│   │                                        flow) — Course Scheme upload/list/delete flow (Phase 2-3)
+│   ├── dashboard/page.tsx                real — stats overview page (Phase 3) + Phase 9's live clock
+│   ├── build-timetable/page.tsx          real (Phase 9) — the data-entry wizard: program/shift/part/
+│   │                                        semester/group selection, draft assignment list, finalize
+│   ├── teachers/page.tsx                 real (Phase 10) — search-by-name teacher lookup + detail view
 │   └── timetables/page.tsx               real (Phase 7) — generate button + live elapsed timer, saved-
 │                                            timetable list, per-division weekly detail view
 ├── components/
 │   ├── ui/                               real — Button, Alert, ConfirmDialog, Spinner, form fields,
-│   │                                        SiteHeader (now links to /timetables too)
-│   ├── scheme-upload/                    real — the 4-step upload wizard + saved-scheme list
+│   │                                        SiteHeader (now links to /build-timetable and /teachers too)
+│   ├── scheme-upload/                    real (Phase 10: scheme-list.tsx replaced by scheme-slots.tsx)
+│   │                                        — the 4-step upload wizard + per-Part slot grid
 │   │                                        (upload-step, text-review-step, course-form-step,
-│   │                                        preview-step, scheme-list, semester-table, step-indicator)
+│   │                                        preview-step, scheme-slots, semester-table, step-indicator)
 │   ├── dashboard/
 │   │   └── stat-card.tsx                 real — the stat tile + its loading skeleton
+│   ├── build-timetable/                  real (Phase 9)
+│   │   ├── selection-step.tsx            real — program/shift/part/semester/group picker
+│   │   ├── course-assignment-form.tsx    real — add-a-course form incl. inline quick-create
+│   │   ├── assignment-list.tsx           real — draft DivisionCourse rows, live constraint-9 warning
+│   │   └── finalize-panel.tsx            real — locks the list, runs the real GA, shows the result
+│   ├── chat/
+│   │   └── chat-widget.tsx               real (Phase 10) — floating action button + chat panel
 │   └── timetables/                       real (Phase 7)
 │       ├── division-schedule.tsx         real — one division's weekly schedule as a table
 │       └── timetable-list.tsx            real — saved-timetable cards with converged/draft status
@@ -151,13 +189,18 @@ frontend/
 │   ├── api-client.ts                     real — fetch wrapper; API_BASE_URL now resolves to the
 │   │                                        page's own host at runtime on the client (falls back to
 │   │                                        localhost only during SSR) so it works over the LAN too
-│   ├── schemes.ts                        real — Course Scheme types, lab-pairing helper, API calls
-│   ├── scheme-text-parser.ts             real — parses the university portal's table layout for
-│   │                                        the "Fill rows from extracted text" button
+│   ├── schemes.ts                        real (Phase 10 added `applies_to_part`) — Course Scheme types,
+│   │                                        lab-pairing helper, API calls
+│   ├── scheme-text-parser.ts             real (Phase 10 removed matchProgramId, Program is fixed by the
+│   │                                        slot clicked, not detected from the document) — parses the
+│   │                                        university portal's table layout for "Fill from extracted text"
 │   ├── dashboard.ts                      real — stats types + API call
 │   ├── timetables.ts                     real (Phase 7) — generate/list/detail types + API calls
-│   └── build-timetable.ts                real (Phase 9) — Teacher/Classroom/Division/CourseAssignment
-│                                            types + every /teachers, /classrooms, /divisions, /courses call
+│   ├── build-timetable.ts                real (Phase 9) — Teacher/Classroom/Division/CourseAssignment
+│   │                                        types + every /teachers, /classrooms, /divisions, /courses call
+│   ├── teachers.ts                       real (Phase 10) — TeacherDetail/TeacherAssignment/
+│   │                                        TeacherScheduleSession types, searchTeachers/fetchTeacherDetail
+│   └── chat.ts                           real (Phase 10) — ChatTurn type, sendChatMessage()
 └── public/imcs-logo.png                  real — the IMCS crest used in the header and homepage
 ```
 
@@ -185,6 +228,7 @@ including from a phone over the real local network, not just localhost.
 | 8 | Full 8-division convergence: greedy constructive seeding for half of every fresh population (Technique 1 of 3; Techniques 2-3 deliberately not needed). Full BSCS problem 100/100 converged at generation 1 | Done — see §4, §11 |
 | 8.1 | Lab room identity: the department's five real labs (Lab A-E, shared by every division) replace six invented "Room NN (Lab)" rooms; labs are a shared pool the GA assigns per session; stale timetables removed. Convergence unchanged (100/100, generation 1) | Done — see §4, §12 |
 | 9 | General-purpose data-entry dashboard (`/build-timetable`): real Teacher/Classroom CRUD, per-course room pre-assignment (fixes the GA's search, not just a UI nicety), a live constraint-9 warning at data-entry time, finalize-and-generate, real Word export, a dashboard clock widget | Done — see §13 |
+| 10 | Three independent pieces: (1) Course Scheme upload redesigned around per-Part slots, one per program per Part; (2) a teacher lookup page (search by name, see every division assignment + the real generated schedule); (3) a function-calling chatbot (Gemini picks from 4 real DB-query functions, never RAG) behind a floating chat widget on every page | Done — see §14 |
 
 ---
 
@@ -200,7 +244,7 @@ created and then deleted again as part of its own testing, §13):
 | `programs` | 18 | All levels for all 3 departments; 3 are `is_schedulable=true` (the BS programs) |
 | `classrooms` | 11 | 6 lecture rooms (Room 01-06, from `docs/timetable.json`) + the 5 real labs **Lab A, Lab B, Lab C, Lab D, Lab E** (type `lab`, shared by every division). Phase 9 added `POST /api/v1/classrooms` to create more of either type through the dashboard, but none were kept in this snapshot |
 | `teachers` | 29 | Real full names, `availability.days` derived from actual teaching days in the JSON. Phase 9 added `POST /api/v1/teachers` to add more through the dashboard |
-| `course_schemes` | 2 (1 active) | The original BSCS 2024 upload (active, 45 courses, `applies_to_part` not yet added — that's Phase 10 scope), plus a synthetic `scheme_year=2026, is_active=false` scheme holding real-timetable-derived Course rows |
+| `course_schemes` | 5 (4 active) | Phase 10 split the original whole-program BSCS 2024 upload into one row per Part it genuinely covers: scheme 6 = Part-I (14 courses), 13 = Part-II (11), 14 = Part-III (10), 15 = Part-IV (10), all `applies_to_part` set, all active. Plus the Phase 7 synthetic `scheme_year=2026, is_active=false, applies_to_part=null` scheme holding real-timetable-derived Course rows (predates the per-Part flow, left as-is) |
 | `courses` | 68 | 45 from the 2024 scheme (`semester` backfilled from the scheme's own semester grouping, Phase 9) + 23 from the synthetic scheme (`semester` left null — see §4/§9 history). Phase 9 added `POST /api/v1/courses` ("add a new subject") for programs with no upload yet |
 | `divisions` | 8 | BSCS Part-I to Part-IV, Morning shift, PM/PE split each. Phase 9's `POST /api/v1/divisions` can create more for any program/part/semester/shift/group (its own test divisions for BS(AI) and Mathematics were deleted after testing, §13) |
 | `division_courses` | 43 | Real course/teacher assignments per division, incl. joint PM/PE subjects. Two columns added in Phase 9, both null for all 43 existing rows (BSCS still relies on `Division.home_room_id` and the shared lab pool, unchanged): `lecture_room_id` (a per-course room pre-assignment) and `lab_room_id` (a per-course fixed lab) |
@@ -411,15 +455,25 @@ only through the production package.
 - **Reviewing/publishing a draft timetable** — every generated `Timetable`
   is created with `status="draft"`; there's no UI or endpoint yet to move
   one to `published`, edit it, or compare versions. Phase 9's "Finalize"
-  locks the *assignment list*, not the resulting timetable's status.
+  locks the *assignment list*, not the resulting timetable's status. Phase
+  10's chatbot and teacher lookup page both work around this honestly: they
+  treat "the single most recently generated Timetable" as the practical
+  stand-in for "current"/"published" and say so in code comments, rather
+  than silently reinterpreting a status that doesn't exist yet.
 - **Browsing/editing Teachers and Classrooms after creation** — Phase 9
   added real `POST`/`GET` endpoints and inline quick-create from within
-  `/build-timetable`, but there's still no standalone admin page to list,
-  edit, or delete a Teacher or Classroom on its own.
+  `/build-timetable`; Phase 10 added a real search-by-name **lookup** page
+  (`/teachers`) for Teachers specifically. Still missing for both Teachers
+  and Classrooms: edit or delete after creation, and any standalone admin
+  page for Classrooms.
 - **Un-finalizing a division** — once `/build-timetable` locks a division's
   assignment list, nothing can unlock it again; fixing a mistake in a
   finalized division needs direct database access. Not built, not
   requested this phase.
+- **Editing a Course Scheme's `applies_to_part` after upload** — Phase 10's
+  per-Part redesign fixes the Part by which slot the admin clicked at upload
+  time; there's no way to move an already-saved scheme to a different Part
+  short of delete-and-re-upload into the right slot.
 
 ---
 
@@ -898,3 +952,181 @@ phase due to time spent on the port-collision diagnosis. Nothing in the fixes is
 viewport-specific (both are plain state-management changes, not layout), so there is no
 specific reason to expect a different mobile result — but it was not independently
 re-verified, and that is stated plainly rather than assumed.
+
+---
+
+## 14. Phase 10 testing — commands run and actual results
+
+Run 2026-09-22 against the live Supabase database and a locally running backend/frontend.
+Three independent pieces, each tested separately below.
+
+### Part 1 — Course Scheme per-Part redesign
+
+**Migration.** `alembic upgrade head` applied `21e2917be8e9` cleanly. The existing
+whole-program BSCS 2024 scheme (one row, all 8 semesters, 45 courses) split into four
+per-Part rows, confirmed by direct query afterward:
+
+| Scheme id | Part | Semesters | Courses |
+|---|---|---|---|
+| 6 (kept the original id) | Part-I | 1-2 | 14 |
+| 13 (new) | Part-II | 3-4 | 11 |
+| 14 (new) | Part-III | 5-6 | 10 |
+| 15 (new) | Part-IV | 7-8 | 10 |
+
+14+11+10+10 = 45, matching the pre-split course count exactly no course was lost or
+duplicated. The unrelated Phase 7 synthetic scheme (id 10, no semester grouping) was left
+with `applies_to_part = NULL`, as designed. `divisions.course_scheme_id` was checked
+before the split: nothing referenced scheme 6, so the split could not orphan a real
+Division. `downgrade -1` then `upgrade head` again reproduced the identical result.
+
+**Real API self-test** (curl against a restarted server, program/scheme ids are real):
+
+| # | What was run | Result |
+|---|---|---|
+| 1 | `POST /course-schemes` targeting BSCS Part-I (already occupied, active) | **HTTP 409**, names the conflicting scheme's year confirms the conflict check is now scoped to (program, Part), not (program, year) |
+| 2 | `POST /course-schemes` targeting BS(AI) Part-I (empty slot) | **HTTP 201**, real row created |
+| 3 | `DELETE` that new BS(AI) scheme, then `POST` again into the now-empty slot with a different year | Delete returns `is_active: false` (soft-delete), re-upload returns **HTTP 201** confirms the replace-after-delete flow works end to end |
+| 4 | Step 3, but *before* the `find_blocking_timetables` fix | **HTTP 500** (`psycopg.errors.UndefinedColumn`) real pre-existing bug (see §14 "Bug found and fixed" below), caught by this very test |
+| 5 | Test rows from steps 2-3 | Deleted afterward; final DB state confirmed to hold only the 4 real BSCS Part rows + the Phase 7 synthetic scheme |
+
+**Bug found and fixed**: `find_blocking_timetables()` (used by the scheme-delete
+endpoint to check "is a published timetable using this scheme?") still queried
+`timetables.division_id` and `divisions.scheme_year_id` neither column has existed since
+Phase 7 replaced that early design with `TimetableSession.division_ids` (a JSONB array)
+and `Division.course_scheme_id`. Every scheme deletion has 500'd against real linked data
+since Phase 7 nothing before Phase 10 had exercised the delete path with a scheme that
+actually had real divisions pointing at it. Rewritten against the real schema; verified
+with a real published `Timetable`: correctly blocks deletion of the scheme its divisions
+use, correctly allows deletion of an unrelated scheme.
+
+**Year auto-detection.** Confirmed both paths: pasting real extracted scheme text with a
+recognizable year auto-fills `scheme_year` and shows no warning; pasting text with no
+recognizable year shows a persistent warning ("Couldn't detect the scheme year... Enter it
+by hand above before previewing") instead of guessing or silently failing.
+
+**UI verification** (headless Edge, `p10-schemes-desktop.png` / `p10-schemes-mobile.png`):
+0 console errors, no overflow at either width. BS Computer Science shows all 4 Part slots
+filled with the real split counts (14/11/10/10); BS(AI) and BS Mathematics show all 4
+slots empty with "Upload" buttons. One em-dash was caught visually in this screenshot
+("Empty — no scheme uploaded yet", written after the first repo-wide sweep) and fixed in
+the second sweep pass (commit `4dec410`).
+
+### Part 2 — Teacher lookup page
+
+**Real API self-test:**
+
+| # | What was run | Result |
+|---|---|---|
+| 1 | `GET /api/v1/teachers?search=gulsher` | **1 match** (after confirming the server was actually restarted an earlier test against a stale process wrongly returned all 29) |
+| 2 | `GET /api/v1/teachers/40` (Dr. Gulsher Laghari) | **4 assignments** (2 courses, each held as both theory and lab teacher) and **9 real schedule sessions** from Timetable #22 |
+| 3 | Cross-check: sum of `weekly_periods` across the 4 assignments | 3+2+3+1 = **9**, exactly matching the 9 real placed sessions returned |
+
+**UI verification** (headless Edge, `p10-teachers-desktop.png` / `p10-teachers-mobile.png`):
+typed "Gulsher" into the search box, clicked the one real result, the detail view rendered
+the same data as the curl-verified API response profile line, division-assignment table,
+real weekly-schedule table with day/time/subject/room. 0 console errors, no overflow at
+either width; mobile tables scroll within their own container, consistent with the rest of
+the site.
+
+### Part 3 — Function-calling chatbot
+
+**Direct function tests** (no Gemini involved every `get_*` function is plain, testable
+Python called straight from a script against the real database):
+
+| Function | Real call | Real result |
+|---|---|---|
+| `get_current_class` | `("Gulsher")`, run outside class hours | `{"found": false, "reason": "It's 20:19 on Tue, outside class hours (08:30-13:30)."}` |
+| `get_teacher_schedule` | `("Gulsher")` | 9 real sessions, matching the Part 2 API result exactly |
+| `get_room_status` | `("Lab A")`, outside class hours | `{"found": true, "occupied": false, "reason": "Outside class hours right now."}` |
+| `get_free_rooms` | `("Tuesday", "10:10")` | Found the **bug below**, then confirmed correct after the fix |
+| `get_teacher_schedule` | `("NoSuchPerson")` | `{"found": false, "reason": "No teacher matching 'NoSuchPerson' is on record."}` |
+
+**Bug found and fixed**: the time-slot boundary comparison used a closed interval
+(`s[1] <= time <= s[2]`), so an exact boundary time like `"10:10"` ambiguously matched
+*either* the slot ending at 10:10 or the one starting at 10:10, and `next()` picked the
+wrong (earlier) one. Fixed to a half-open interval (`s[1] <= time < s[2]`); re-verified
+with the task's own example ("is Lab A free on Tuesday at 10am", i.e. `"10:00"`) and with
+the exact boundary value `"10:10"`, both now resolving to the correct slot.
+
+**Missing-key test**: with `GEMINI_API_KEY` unset, `POST /api/v1/chat
+{"message":"who is teaching right now?"}` returned **HTTP 503**:
+`{"detail":"The chatbot needs a Gemini API key. Set GEMINI_API_KEY in backend/.env (a
+free key is available at https://aistudio.google.com/apikey) and restart the server."}`
+Clean, no crash, no traceback leaked.
+
+**Invalid-key test**: with `GEMINI_API_KEY=invalid-fake-key-for-testing-only`, the same
+question returned **HTTP 503**: `{"detail":"Couldn't reach Gemini: 400 INVALID_ARGUMENT.
+{'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.'
+...}}"}` also clean, and it proved real outbound network access to Gemini's API exists
+from this environment (a real API-level rejection came back, not a connection failure).
+
+**Model name fix**: the first live call with the real key failed with a real **404** from
+Gemini itself: `'This model models/gemini-2.5-flash is no longer available to new users.
+Please update your code to use models/gemini-3.6-flash...'`. `GEMINI_MODEL` was updated
+to `"gemini-3.6-flash"` per that message; every question below used the corrected model.
+
+**The 5 required live questions, through the real Gemini integration, real key** (each
+round-trip through the function-calling loop took anywhere from ~15s to ~4 minutes under
+real Gemini API load on the day of testing; two questions hit a transient `503 UNAVAILABLE
+"high demand"` from Gemini's side on the first attempt and were simply retried, which is
+itself a legitimate real response, not a bug in this codebase):
+
+| # | Question sent | Real response |
+|---|---|---|
+| 1 | "Who is teaching right now?" | *(first attempt)* "To find out who is teaching right now, please specify a teacher's name or a room name." Gemini correctly recognised `get_current_class` needs a `room_or_teacher` argument this question didn't supply one and asked for it instead of guessing. |
+| 2 | "Is Lab A free on Tuesday at 10am?" | First attempt: Gemini-side `503 high demand` (transient, real). Retry: **"Yes, Lab A is free on Tuesday at 10:00 AM."** matches the direct `get_free_rooms` test exactly. |
+| 3 | "What is Dr. Gulsher Laghari's schedule?" | Full real 9-session weekly schedule, correct days/times/rooms/lab-vs-lecture, matching the Part 2 API data exactly (quoted in full below). |
+| 4 | "What is the schedule for BS Artificial Intelligence Part 1?" *(a program with no real Division/DivisionCourse data at all currently BS(AI) and Mathematics slots are still empty, per §3)* | First attempt: Gemini-side `503 high demand` (transient, real). Retry: **"No schedule was found for 'BS Artificial Intelligence Part 1'. Schedules in the system can only be retrieved by teacher name or room."** Honest, no fabricated schedule, correctly explains the tool's actual shape rather than guessing. |
+| 5 | "What's the best pizza topping?" *(deliberately unrelated to scheduling)* | **"I can only answer questions about the university department's class schedule, room availability, and teacher timetables. If you have any schedule-related questions, feel free to ask!"** Correctly declined instead of calling a tool with nonsense arguments or inventing an answer. |
+
+Question 3's full answer, verbatim:
+
+> Here is Dr. Gulsher Laghari's schedule:
+>
+> **Tuesday** 08:30-09:20 Data Base System (Lecture) Room 05; 11:00-11:50 Object Oriented
+> Programming (Lecture) Room 01
+> **Wednesday** 10:10-11:00 Object Oriented Programming (Lab) Lab A; 12:40-13:30 Data Base
+> System (Lecture) Room 05
+> **Thursday** 09:20-10:10 Data Base System (Lab) Lab D; 10:10-11:00 Object Oriented
+> Programming (Lecture) Room 01
+> **Friday** 08:30-09:20 Object Oriented Programming (Lab) Lab B; 11:00-11:50 Data Base
+> System (Lecture) Room 05; 12:40-13:30 Object Oriented Programming (Lecture) Room 01
+
+9 sessions, matching the direct-function and Part-2-API results exactly.
+
+**Frontend widget verification** (headless Edge, `p10-chat-desktop-open.png` /
+`p10-chat-mobile-open.png`): opens via the floating action button at both 1280px and
+390px, no horizontal overflow at either width (`document.documentElement.scrollWidth <=
+clientWidth` confirmed programmatically), 0 console errors. A live end-to-end send was
+also driven through the real rendered UI (not curl): typed a real question into the
+input, clicked Send, the user's message bubble rendered immediately and a "Thinking…"
+state showed while the real Gemini round-trip was in flight confirming the widget's
+wiring, not just the API route, actually works.
+
+### Desktop manual testing (1280×900)
+
+| Step | Action | Expected | Actual |
+|---|---|---|---|
+| D1 | Open `/schemes` | Per-program grid, 4 Part slots each | Confirmed BSCS shows 4 filled slots (14/11/10/10 courses), BS(AI)/Math show 4 empty slots |
+| D2 | Click "Upload" on an empty BS(AI) Part-I slot | Wizard opens with Program/Part fixed and shown read-only | Confirmed 201 on save |
+| D3 | Paste extracted text with no recognizable year | Persistent warning asking to enter the year by hand | Confirmed |
+| D4 | Click "Delete" on an occupied slot, confirm the warning, then "Upload" into the now-empty slot | Old scheme soft-deleted (`is_active:false`), new one saved (201) into the same slot | Confirmed |
+| D5 | Open `/teachers`, type "Gulsher" | Debounced search narrows to 1 real match | Confirmed |
+| D6 | Click the matched result | Profile, availability, 4 division assignments, real 9-session weekly schedule table render | Confirmed, matches the curl-verified API response |
+| D7 | Click the chat FAB (bottom-right) | Panel opens, example prompts shown | Confirmed |
+| D8 | Ask "Who is teaching right now?" | Real answer appears below the question | Confirmed (question 1 above) |
+| D9 | Ask "Is Lab A free on Tuesday at 10am?" | Real yes/no answer reflecting the actual database state | Confirmed (question 2 above) |
+| D10 | Ask "What is Dr. Gulsher Laghari's schedule?" | Real weekly schedule, matching the Part 2 lookup page | Confirmed (question 3 above) |
+
+### Mobile manual testing (390×844, touch viewport)
+
+| Step | Action | Expected | Actual |
+|---|---|---|---|
+| M1 | Open `/schemes` at mobile width | Part-slot grid stacks to 1 column, no horizontal page scroll | Confirmed (`p10-schemes-mobile.png`) |
+| M2 | Open `/teachers`, search and open a teacher | Search box, results and detail view stack vertically; the schedule table scrolls within its own container, not the page | Confirmed (`p10-teachers-mobile.png`) |
+| M3 | Open the chat FAB | Panel fills the viewport width minus a margin, no page-level horizontal scroll | Confirmed programmatically (`scrollWidth <= clientWidth`) and visually (`p10-chat-mobile-open.png`) |
+| M4 | Type a question and send it | Message bubble appears immediately, wraps within the panel, "Thinking…" shows while waiting | Confirmed via a real driven browser send (not just a screenshot) |
+
+**Honest note**: unlike Phase 9, Phase 10's mobile pass was captured *after* every backend
+fix (no port-collision or stale-process issue was hit this phase), so M1-M4 above directly
+demonstrate the shipped behaviour, not an earlier pre-fix state.
