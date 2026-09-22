@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 
 class GenerateRequest(BaseModel):
-    # None means "every schedulable BSCS division" — the endpoint fills that in.
+    # None means "every schedulable BSCS division" the endpoint fills that in.
     division_ids: list[int] | None = None
     seed: int | None = None
     population_size: int = Field(default=120, ge=10, le=1000)

@@ -1,6 +1,6 @@
 /**
  * Types and API call for the stats overview (docs/PROJECT_ARCHITECTURE.md §8).
- * Counts only — this is not a teacher or room availability view.
+ * Counts only this is not a teacher or room availability view.
  */
 
 import { apiFetch } from "@/lib/api-client";

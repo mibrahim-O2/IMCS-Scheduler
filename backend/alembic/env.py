@@ -25,7 +25,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    # Migrations use the session-pooler URL — the transaction pooler can't run DDL reliably.
+    # Migrations use the session-pooler URL the transaction pooler can't run DDL reliably.
     return get_settings().database_url
 
 

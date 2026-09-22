@@ -8,7 +8,7 @@ Course.semester lets the Phase 9 data-entry dashboard filter a program's course 
 semester; the backfill below fills it in for every course that already belongs to a scheme
 with a real semester grouping (an official upload) from that grouping directly, so existing
 BSCS 2024 courses aren't left null. Schemes with no "semesters" key in their content (the
-Phase 7 synthetic timetable-derived scheme) are left alone on purpose — see
+Phase 7 synthetic timetable-derived scheme) are left alone on purpose see
 docs/PROJECT_AUDIT.md Phase 9.
 
 Division's unique key gains semester (a Part now spans two Division rows, one per

@@ -60,7 +60,7 @@ export type TimetableDetail = TimetableSummary & {
 
 export function generateTimetable(): Promise<GenerateResult> {
   // Triggers a real GA run for every BSCS Part-I to Part-IV division (the backend's
-  // default when no division_ids are given) and waits for it to finish — this can
+  // default when no division_ids are given) and waits for it to finish this can
   // genuinely take a while, which is why the caller shows a real waiting state.
   return apiFetch<GenerateResult>("/api/v1/timetables/generate", {
     method: "POST",

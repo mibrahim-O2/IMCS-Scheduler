@@ -8,7 +8,7 @@ with independent teachers and rooms. See docs/PROJECT_ARCHITECTURE.md §3.2.
 DivisionCourse is an addition beyond the original §3.2 sketch, added in
 Phase 7 once real data (docs/timetable.json) showed why it's needed: which
 teacher teaches which subject to which division, and how many periods a
-week, is a fact about that specific (division, course) pairing — it isn't
+week, is a fact about that specific (division, course) pairing it isn't
 derivable from Division/Course/Teacher alone, and it isn't always symmetric
 across PM/PE (e.g. IOT runs 3 periods/week for Part-I PM but only 2 for
 Part-I PE in the real timetable). This table is the direct, real, seeded
@@ -65,7 +65,7 @@ class Division(TimestampMixin, Base):
     student_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Human-readable label ("BS Computer Science Part-I (Morning) - Pre-Medical"), stored
-    # rather than recomputed everywhere it's displayed — small convenience, not load-bearing.
+    # rather than recomputed everywhere it's displayed small convenience, not load-bearing.
     label: Mapped[str] = mapped_column(String(150), nullable=False)
 
     # This division's own fixed lecture room. Without pinning it, the GA has nothing
@@ -96,7 +96,7 @@ class Division(TimestampMixin, Base):
 class LabBatch(TimestampMixin, Base):
     """One parallel sub-batch of a lab, each with its own teacher and room.
 
-    Not populated for BSCS Part-I to Part-IV in Phase 7 — the real timetable data
+    Not populated for BSCS Part-I to Part-IV in Phase 7 the real timetable data
     for these divisions has exactly one batch per division per lab (no further
     splitting), so a plain `is_lab=true` TimetableSession row is enough and
     `TimetableSession.lab_batch_id` stays null. This table exists and is ready
@@ -120,21 +120,21 @@ class LabBatch(TimestampMixin, Base):
 
 class DivisionCourse(TimestampMixin, Base):
     """One row = "this division takes this course, taught by this teacher, N
-    periods a week" — the real syllabus assignment the GA schedules from.
+    periods a week" the real syllabus assignment the GA schedules from.
 
     `joint_division_id` is set when this same session is shared by another
     division sitting together (e.g. History-II taught to Part-I PM and PE at
-    once) — the PM row alone represents the joint session; PE does not get
+    once) the PM row alone represents the joint session; PE does not get
     its own separate row for it. See docs/CONSTRAINTS.md constraint 5.
 
     `lecture_room_id` and `lab_room_id`, added in Phase 9, are this course's own
     pre-assigned rooms, set per assignment through the data-entry dashboard rather than
     inherited from the division as a whole. `lecture_room_id` null falls back to
     `Division.home_room_id` (how every BSCS Part-I to Part-IV assignment from Phase 7-8.1
-    still works — none of them set it). `lab_room_id` null falls back to the shared lab
+    still works none of them set it). `lab_room_id` null falls back to the shared lab
     pool (Lab A-E, see scheduler/chromosome.py); set, it fixes the GA's search to that one
     lab for every session this assignment needs, which is the whole point of pre-assigning
-    it — see docs/PROJECT_AUDIT.md Phase 9.
+    it see docs/PROJECT_AUDIT.md Phase 9.
     """
 
     __tablename__ = "division_courses"

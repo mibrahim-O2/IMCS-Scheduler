@@ -19,7 +19,7 @@ import {
 
 type FillMessage = { tone: "success" | "warning"; text: string } | null;
 
-// Step 3: the structured course rows — one row per course, with any lab recorded on that course.
+// Step 3: the structured course rows one row per course, with any lab recorded on that course.
 export function CourseFormStep({
   programs,
   programId,
@@ -166,7 +166,7 @@ export function CourseFormStep({
         <h2 className="text-lg font-semibold text-content">Enter the course rows</h2>
         <p className="mt-1 text-sm text-content/70">
           One row per course. If a course has a lab, tick “Has a lab” on that course and enter the lab&apos;s
-          credit hours — labs are not separate rows. Leave credit hours empty for non-credit (NC) subjects.
+          credit hours labs are not separate rows. Leave credit hours empty for non-credit (NC) subjects.
         </p>
       </div>
 

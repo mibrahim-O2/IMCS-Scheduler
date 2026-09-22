@@ -1,6 +1,6 @@
 """Phase 4 dev script: the core GA, solving BSCS Part-I Morning (semester 1).
 
-Standalone on purpose — no database, no API, no frontend. The course data below
+Standalone on purpose no database, no API, no frontend. The course data below
 was read out of the saved BSCS 2024 scheme (scheme #6, from the university's own
 course scheme PDF) and pasted here so this script runs on its own; the teachers
 and their available days come from the legend of the real BSCS Part-I Morning
@@ -14,7 +14,7 @@ Run it with:
 Note (post-Phase 6 cleanup): the hand-typed-from-PDF approach used below is
 superseded going forward by docs/timetable.json, a clean structured export
 covering all BSCS/BSAI Morning divisions with full teacher names and no
-initials ambiguity. This file's own data and logic are left as-is — this is
+initials ambiguity. This file's own data and logic are left as-is this is
 just a pointer for whoever writes the next dev script.
 """
 
@@ -54,7 +54,7 @@ class Teacher:
     available_days: tuple[str, ...]
 
 
-# Full names from the real timetable legend. Initials are never used as identifiers —
+# Full names from the real timetable legend. Initials are never used as identifiers
 # they collide across sheets and refer to different people.
 TEACHERS: dict[str, Teacher] = {
     teacher.full_name: teacher
@@ -102,7 +102,7 @@ COURSES: tuple[Course, ...] = (
 
 
 class Gene(NamedTuple):
-    """One placed session — the gene shape from §6.1."""
+    """One placed session the gene shape from §6.1."""
 
     course_code: str
     teacher: str
@@ -285,7 +285,7 @@ def fitness(chromosome: Chromosome, requirements: list[SessionRequirement]) -> f
 def tournament_select(
     rng: random.Random, scored: list[tuple[float, Chromosome]], tournament_size: int
 ) -> Chromosome:
-    # Takes a few random individuals and returns the fittest of them — a real comparison,
+    # Takes a few random individuals and returns the fittest of them a real comparison,
     # not an unconditioned random pick.
     contenders = rng.sample(scored, min(tournament_size, len(scored)))
     return max(contenders, key=lambda pair: pair[0])[1]
@@ -306,7 +306,7 @@ def mutate(
     requirements: list[SessionRequirement],
     mutation_rate: float,
 ) -> Chromosome:
-    # Re-rolls a gene's room, day and time slot. The course/teacher pairing is never re-rolled —
+    # Re-rolls a gene's room, day and time slot. The course/teacher pairing is never re-rolled
     # that comes from the course scheme.
     mutated = list(chromosome)
     for index, requirement in enumerate(requirements):
@@ -384,7 +384,7 @@ def format_timetable(chromosome: Chromosome, requirements: list[SessionRequireme
         for day in DAYS:
             entry = placed.get((day, slot))
             if entry is None:
-                rows[0].append("—".ljust(width))
+                rows[0].append(" ".ljust(width))
                 rows[1].append("".ljust(width))
                 rows[2].append("".ljust(width))
                 continue
@@ -533,7 +533,7 @@ def main() -> None:
     requirements = build_session_requirements(COURSES)
 
     print("=" * 110)
-    print("PHASE 4 — core GA, BSCS Part-I Morning (semester 1)")
+    print("PHASE 4 core GA, BSCS Part-I Morning (semester 1)")
     print("=" * 110)
     print_dataset(requirements)
 
@@ -568,7 +568,7 @@ def main() -> None:
               f"generations min {min(generations)}, max {max(generations)}, "
               f"mean {sum(generations) / len(generations):.1f}")
     else:
-        print("\nNo run converged — see the timetable below for the best attempt.")
+        print("\nNo run converged see the timetable below for the best attempt.")
 
     representative = converged[0] if converged else results[0]
     outcome = (

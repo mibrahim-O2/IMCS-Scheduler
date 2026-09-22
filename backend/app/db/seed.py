@@ -1,6 +1,6 @@
 """Seeds the fixed departments and program levels.
 
-Run with `python -m app.db.seed`. Safe to run repeatedly — rows are matched on
+Run with `python -m app.db.seed`. Safe to run repeatedly rows are matched on
 department short code and (department, level), then updated in place. Only the
 three BS programs are schedulable today (docs/PROJECT_ARCHITECTURE.md §3.1).
 """
@@ -23,10 +23,10 @@ DEPARTMENT_SEED: list[dict] = [
             (ProgramLevel.BS, "BS Computer Science"),
             (ProgramLevel.MASTER, "Master of Computer Science (MCS)"),
             (ProgramLevel.MPHIL, "M.Phil Computer Science"),
-            (ProgramLevel.MPHIL_BIOINFORMATICS, "M.Phil (Bioinformatics) — Computer Science"),
+            (ProgramLevel.MPHIL_BIOINFORMATICS, "M.Phil (Bioinformatics) Computer Science"),
             (ProgramLevel.PHD, "Ph.D Computer Science"),
             (ProgramLevel.MSC_PASS, "M.Sc. (Pass) Computer Science"),
-            (ProgramLevel.PGD, "Post Graduate Diploma — Computer Science"),
+            (ProgramLevel.PGD, "Post Graduate Diploma Computer Science"),
         ],
     },
     {
@@ -37,10 +37,10 @@ DEPARTMENT_SEED: list[dict] = [
             (ProgramLevel.BS, "BS Artificial Intelligence"),
             (ProgramLevel.MASTER, "Master of Artificial Intelligence"),
             (ProgramLevel.MPHIL, "M.Phil Artificial Intelligence"),
-            (ProgramLevel.MPHIL_BIOINFORMATICS, "M.Phil (Bioinformatics) — Artificial Intelligence"),
+            (ProgramLevel.MPHIL_BIOINFORMATICS, "M.Phil (Bioinformatics) Artificial Intelligence"),
             (ProgramLevel.PHD, "Ph.D Artificial Intelligence"),
             (ProgramLevel.MSC_PASS, "M.Sc. (Pass) Artificial Intelligence"),
-            (ProgramLevel.PGD, "Post Graduate Diploma — Artificial Intelligence"),
+            (ProgramLevel.PGD, "Post Graduate Diploma Artificial Intelligence"),
         ],
     },
     {

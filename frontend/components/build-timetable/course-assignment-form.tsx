@@ -118,7 +118,7 @@ export function CourseAssignmentForm({
       const result = await onCheckConflict(id, courseId as number);
       if (result.conflict) setConflictMessage(result.message);
     } catch {
-      // A failed live check isn't worth blocking the form over — the server still enforces
+      // A failed live check isn't worth blocking the form over the server still enforces
       // constraint 9 for real when "Add to list" is pressed.
     }
   }
@@ -164,7 +164,7 @@ export function CourseAssignmentForm({
           }}
           options={[
             { value: "", label: courses.length ? "Choose a course…" : "No courses yet for this semester" },
-            ...courses.map((course) => ({ value: course.id, label: `${course.code} — ${course.name}` })),
+            ...courses.map((course) => ({ value: course.id, label: `${course.code} ${course.name}` })),
           ]}
         />
         <div className="flex items-end">
@@ -194,7 +194,7 @@ export function CourseAssignmentForm({
           {selectedCourse.has_lab && (
             <span className="font-medium text-content"> + {selectedCourse.lab_credit_hours ?? 1} lab / week</span>
           )}{" "}
-          — from the course's credit hours, not typed by hand.
+ from the course's credit hours, not typed by hand.
         </p>
       )}
 

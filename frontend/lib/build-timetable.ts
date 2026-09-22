@@ -83,7 +83,7 @@ export function fetchTeachers(programId?: number): Promise<Teacher[]> {
 }
 
 export function createTeacher(fullName: string, days: string[]): Promise<Teacher> {
-  // The dashboard's inline "add new teacher" — a plain create, no program pinned yet.
+  // The dashboard's inline "add new teacher" a plain create, no program pinned yet.
   return apiFetch<Teacher>("/api/v1/teachers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -155,7 +155,7 @@ export function fetchAssignments(divisionId: number): Promise<CourseAssignment[]
 }
 
 export function checkTeacherConflict(divisionId: number, teacherId: number, courseId: number): Promise<TeacherConflict> {
-  // Constraint 9's live pre-check — called as the admin picks a teacher, before "Add to list".
+  // Constraint 9's live pre-check called as the admin picks a teacher, before "Add to list".
   return apiFetch<TeacherConflict>(
     `/api/v1/divisions/${divisionId}/courses/check-teacher?teacher_id=${teacherId}&course_id=${courseId}`,
   );
@@ -179,7 +179,7 @@ export function updateAssignment(
   assignmentId: number,
   patch: { teacher_id?: number; lecture_room_id?: number; lab_room_id?: number },
 ): Promise<CourseAssignment> {
-  // Edits a draft row's teacher and/or rooms — only allowed before the division is finalized.
+  // Edits a draft row's teacher and/or rooms only allowed before the division is finalized.
   return apiFetch<CourseAssignment>(`/api/v1/divisions/${divisionId}/courses/${assignmentId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -188,7 +188,7 @@ export function updateAssignment(
 }
 
 export function removeAssignment(divisionId: number, assignmentId: number): Promise<void> {
-  // Drops one draft row — only allowed before the division is finalized.
+  // Drops one draft row only allowed before the division is finalized.
   return apiFetch<void>(`/api/v1/divisions/${divisionId}/courses/${assignmentId}`, { method: "DELETE" });
 }
 
@@ -198,7 +198,7 @@ export function finalizeDivision(divisionId: number): Promise<FinalizeResult> {
 }
 
 export function exportUrl(timetableId: number): string {
-  // The direct download link for a finalized timetable's Word export — a plain URL (not a
+  // The direct download link for a finalized timetable's Word export a plain URL (not a
   // fetch call), since the browser should handle the file download itself. Built from the
   // same API_BASE_URL every other call in this app resolves to (api-client.ts), so it still
   // points at the right host when opened from another device on the LAN.

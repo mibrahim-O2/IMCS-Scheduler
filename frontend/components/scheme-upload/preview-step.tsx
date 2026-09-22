@@ -22,7 +22,7 @@ export function PreviewStep({
   onBack: () => void;
   onConfirm: () => void;
 }) {
-  // Step 4: exactly what will be stored — labs are shown merged the same way the server merges them.
+  // Step 4: exactly what will be stored labs are shown merged the same way the server merges them.
   const paired = pairSemesters(semesters);
   const totals = summarize(paired);
   const mergedLabRows = summarize(semesters).courses - totals.courses;

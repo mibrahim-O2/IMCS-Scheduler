@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { exportUrl, type FinalizeResult } from "@/lib/build-timetable";
 import type { TimetableDetail } from "@/lib/timetables";
 
-// Step 10: locks the list in, runs the real GA, and shows what came out — reuses the same
+// Step 10: locks the list in, runs the real GA, and shows what came out reuses the same
 // division-schedule table the /timetables browse page uses, so a result looks identical
 // whichever way it was generated.
 export function FinalizePanel({
@@ -44,7 +44,7 @@ export function FinalizePanel({
         <Alert tone={result.converged ? "success" : "warning"}>
           {result.converged
             ? `Converged in ${result.generation_count} generations, ${result.session_count} sessions placed in ${result.wall_seconds.toFixed(2)}s.`
-            : `Did not fully converge (${result.stagnated ? "stalled" : "hit the generation cap"}) — ${result.conflict_list.length} conflict(s) remain. Review below before trusting this result.`}
+            : `Did not fully converge (${result.stagnated ? "stalled" : "hit the generation cap"}) ${result.conflict_list.length} conflict(s) remain. Review below before trusting this result.`}
           {" "}
           <a href={exportUrl(result.timetable_id)} className="font-medium text-primary underline">
             Download Word file

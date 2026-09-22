@@ -32,11 +32,11 @@ export function SemesterTable({ semester }: { semester: SemesterRows }) {
                       Lab · {course.lab_credit_hours ?? "?"} cr
                     </span>
                   ) : (
-                    <span className="text-content/40">—</span>
+                    <span className="text-content/40"> </span>
                   )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2">
-                  {course.min_marks ?? "—"} / {course.max_marks ?? "—"}
+                  {course.min_marks ?? " "} / {course.max_marks ?? " "}
                 </td>
               </tr>
             ))}

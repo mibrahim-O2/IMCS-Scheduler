@@ -3,7 +3,7 @@
  */
 
 // Explicit override wins. Otherwise, on the client, reuse whatever host the page itself
-// was loaded from (with the backend's port) — so a phone that opened the frontend at
+// was loaded from (with the backend's port) so a phone that opened the frontend at
 // http://192.168.x.x:3000 over the LAN also calls the backend at that same LAN address
 // instead of "localhost", which on the phone would mean itself, not the laptop. Only
 // falls back to a literal localhost during server-side rendering, where there's no
@@ -38,7 +38,7 @@ async function readErrorMessage(response: Response): Promise<string> {
         .join("; ");
     }
   } catch {
-    // Body was not JSON — fall through to the status-code message.
+    // Body was not JSON fall through to the status-code message.
   }
   return `The server answered with status ${response.status}.`;
 }

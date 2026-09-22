@@ -1,34 +1,34 @@
 """Seeds real Teachers, Classrooms, Divisions and DivisionCourse assignments
 for BS Computer Science Part-I through Part-IV (Morning shift), read straight
-out of docs/timetable.json — the real, structured export of the official
+out of docs/timetable.json the real, structured export of the official
 timetable, adopted in the cleanup phase as the GA's reference data source.
 
-Run with `python -m app.db.seed_bscs_timetable`. Safe to run repeatedly —
+Run with `python -m app.db.seed_bscs_timetable`. Safe to run repeatedly
 everything is matched on a natural key and updated in place, same pattern as
 app/db/seed.py.
 
 What this reads from the JSON and how it's turned into rows:
 - Each Part's schedule rows are grouped by (section, subject). A "Lab (XYZ)"
-  subject is a lab session for the matching theory subject XYZ — the
+  subject is a lab session for the matching theory subject XYZ the
   abbreviation is resolved through LAB_ABBREVIATION_MAP below, built by
   checking that the lab row's teacher matches that subject's teacher for the
   same section (confirmed for every abbreviation actually present).
 - A subject shown with section "PM/PE" is one session both groups sit
-  together (e.g. History-II) — it becomes ONE DivisionCourse row on the PM
+  together (e.g. History-II) it becomes ONE DivisionCourse row on the PM
   division with `joint_division_id` pointing at PE; PE gets no separate row.
-- Two teacher names collide after stripping titles/punctuation — the classic
+- Two teacher names collide after stripping titles/punctuation the classic
   "initials aren't identifiers" problem, this time as a spelling
   inconsistency rather than initials: "Dr. Abdul Rehman Nangraj" is also
   printed "Mr. Abdul Rehman Nangraj" on the Part-II sheet, and
   "Mr. M. Rafiq Mallah" is also printed "Mr. M Rafiq Mallah" (missing the
-  period) on the Part-I sheet. TEACHER_ALIASES canonicalizes both — without
+  period) on the Part-I sheet. TEACHER_ALIASES canonicalizes both without
   this, the seed would create two Teacher rows for one real person and the
   cross-division clash check would silently miss a real clash for them.
 - Room names, lecture: each Part's "classrooms" entry names the fixed lecture room
   per group ("Room No: 01" -> "Room 01"). A room shown as "Room No: 01/02" (the
-  joint-session room) is recorded as the PM division's own room — a deliberate
+  joint-session room) is recorded as the PM division's own room a deliberate
   simplification, documented rather than modeled as a third physical space.
-- Room names, labs: the JSON writes lab rooms as "Lab / Room No: 01" .. "06" —
+- Room names, labs: the JSON writes lab rooms as "Lab / Room No: 01" .. "06"
   six numbered strings that follow the LECTURE room numbering. They are NOT the
   real labs. The department's real labs are five, shared by every division:
   Lab A, Lab B, Lab C, Lab D, Lab E (confirmed by the department, not derived
@@ -80,7 +80,7 @@ LAB_RE = re.compile(r"^Lab\s*\(([A-Za-z0-9]+)\)$", re.IGNORECASE)
 
 # Maps each lab abbreviation to the exact theory subject name it belongs to. Verified by
 # checking the lab row's teacher matches that subject's teacher, per section, for every
-# entry actually present in the JSON — see the module docstring.
+# entry actually present in the JSON see the module docstring.
 LAB_ABBREVIATION_MAP = {
     "DLD": "Digital Logic Design",
     "OOP": "Object Oriented Programming",
@@ -98,7 +98,7 @@ TEACHER_ALIASES = {
     "Mr. M Rafiq Mallah": "Mr. M. Rafiq Mallah",
 }
 
-# Subjects shown with section "PM/PE" — one session both groups sit together.
+# Subjects shown with section "PM/PE" one session both groups sit together.
 JOINT_SUBJECTS = {"History-II", "Ethics"}
 
 # The department's five real, physical labs, shared by every BSCS division.
@@ -131,7 +131,7 @@ def canonical_teacher_name(raw_name: str) -> str:
 
 def room_base_name(raw_room: str) -> str:
     # Pulls the plain "Room NN" name out of a JSON room string, e.g. "Room No: 01" or the
-    # joint PM/PE room "Room No: 01/02" (recorded as the lower-numbered room — see module
+    # joint PM/PE room "Room No: 01/02" (recorded as the lower-numbered room see module
     # docstring) both become "Room 01". Only ever called on the JSON's own "classrooms"
     # entry, which is never prefixed "Lab /", so there's nothing to strip for that case.
     number = re.search(r"\d+", raw_room).group()
@@ -188,7 +188,7 @@ def upsert_lab_rooms(session: Session) -> list[Classroom]:
 def remove_placeholder_lab_rooms(session: Session) -> dict[str, int]:
     # Deletes the invented "Room NN (Lab)" rooms an earlier seed created. Any timetable
     # that put a lab in one of them describes a room that doesn't exist, so it is stale and
-    # is removed with them — but only if it is still a draft: a published timetable is never
+    # is removed with them but only if it is still a draft: a published timetable is never
     # silently deleted, the seed stops and says so instead.
     fake_rooms = [
         room
@@ -220,7 +220,7 @@ def remove_placeholder_lab_rooms(session: Session) -> dict[str, int]:
 def upsert_synthetic_scheme(session: Session, program_id: int) -> CourseScheme:
     # One scheme row to hang the real-timetable-derived Course rows off of. Kept inactive
     # so it never shows up in the admin Course Scheme UI (which is for uploaded official
-    # documents) — this one is seeded from the live timetable, not an admission-year scheme.
+    # documents) this one is seeded from the live timetable, not an admission-year scheme.
     scheme = session.scalar(
         select(CourseScheme).where(CourseScheme.program_id == program_id, CourseScheme.scheme_year == 2026)
     )
@@ -234,7 +234,7 @@ def upsert_synthetic_scheme(session: Session, program_id: int) -> CourseScheme:
     scheme.content = {
         "note": (
             "Synthetic scheme materialized from the real Morning-shift timetable for GA "
-            "seeding (Phase 7) — not an official admission-year document. See "
+            "seeding (Phase 7) not an official admission-year document. See "
             "docs/PROJECT_AUDIT.md."
         )
     }
@@ -250,7 +250,7 @@ def upsert_course(
     lab_credit_hours: int | None,
     code_registry: set[str],
 ) -> Course:
-    # One Course row per distinct subject name in the synthetic scheme — looked up by NAME,
+    # One Course row per distinct subject name in the synthetic scheme looked up by NAME,
     # not a generated code, so the same subject taught to both PM and PE (two separate calls
     # into this function) reuses one row instead of getting a second row with a different code.
     course = session.scalar(select(Course).where(Course.scheme_id == scheme_id, Course.name == name))
@@ -276,7 +276,7 @@ def upsert_division(
     scheme_id: int,
     home_room_id: int,
 ) -> Division:
-    # Matched on (program, part, shift, group) — the natural key for "one specific class".
+    # Matched on (program, part, shift, group) the natural key for "one specific class".
     division = session.scalar(
         select(Division).where(
             Division.program_id == program_id,
@@ -290,11 +290,11 @@ def upsert_division(
         session.add(division)
 
     # "2nd Semester 2026" (the JSON's own title) plus every Part-I subject matching the
-    # official scheme's semester-2 list is what fixes semester = part * 2 — see the
+    # official scheme's semester-2 list is what fixes semester = part * 2 see the
     # part/semester comment in app/models/division.py for the honesty caveat on this.
     division.semester = part * 2
     division.course_scheme_id = scheme_id
-    division.label = f"BS Computer Science Part-{'I' * part if part <= 3 else 'IV'} (Morning) — {GROUP_LABELS[group]}"
+    division.label = f"BS Computer Science Part-{'I' * part if part <= 3 else 'IV'} (Morning) {GROUP_LABELS[group]}"
     division.home_room_id = home_room_id
     return division
 
@@ -310,7 +310,7 @@ def upsert_division_course(
     weekly_lab_periods: int | None,
     joint_division_id: int | None,
 ) -> DivisionCourse:
-    # Matched on (division, course) — one assignment row per subject a division actually takes.
+    # Matched on (division, course) one assignment row per subject a division actually takes.
     assignment = session.scalar(
         select(DivisionCourse).where(
             DivisionCourse.division_id == division_id, DivisionCourse.course_id == course_id
@@ -356,7 +356,7 @@ def seed_part(
     for subject in subjects:
         is_joint = subject in JOINT_SUBJECTS
         # A joint subject's rows are filed under the JSON's own "PM/PE" section key, not
-        # under "PM" or "PE" separately — look it up there and record it once, on the PM
+        # under "PM" or "PE" separately look it up there and record it once, on the PM
         # division, pointing at PE. Everything else is one row per section actually present.
         if is_joint:
             owning_sections = [("PM", "PM/PE")] if ("PM/PE", subject) in parsed["theory"] else []
@@ -424,7 +424,7 @@ def seed(session: Session) -> None:
         .where(Department.short_code == "CS", Program.level == "BS")
     )
     if program is None:
-        raise RuntimeError("BS Computer Science program not found — run app.db.seed first.")
+        raise RuntimeError("BS Computer Science program not found run app.db.seed first.")
 
     upsert_lab_rooms(session)
     removed = remove_placeholder_lab_rooms(session)

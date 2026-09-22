@@ -1,10 +1,10 @@
-"""Hard constraints (heavy penalty), one function per rule — all 9 from
+"""Hard constraints (heavy penalty), one function per rule all 9 from
 docs/CONSTRAINTS.md. Constraints 1-6 are ports of the proven Phase 4-6 dev-script
 logic onto real database ids; constraints 7-9 are implemented here for the
 first time.
 
 Production hardening beyond the dev scripts: every violation is recorded as a
-`Violation` — gene indexes plus a few already-known raw values — and NO
+`Violation` gene indexes plus a few already-known raw values and NO
 human-readable message is built while detecting violations. Phase 6 measured
 that building an f-string per violation was the main cost of evaluating a
 chromosome; a fitness check only ever needs a *count*, so message text is
@@ -21,12 +21,12 @@ from typing import Any
 
 from app.scheduler.chromosome import TIME_SLOTS, Chromosome, DivisionInfo, SessionRequirement
 
-# Every violation costs the same amount for now — there are no soft constraints yet
+# Every violation costs the same amount for now there are no soft constraints yet
 # to weigh against, so a flat weight is enough (docs/PROJECT_ARCHITECTURE.md §6.2).
 HARD_WEIGHT = 100
 
 # A theory subject's weekly sessions may not have more than this many on one day
-# (constraint 7). Labs are exempt — a lab is one session, not part of the spread.
+# (constraint 7). Labs are exempt a lab is one session, not part of the spread.
 MAX_SAME_SUBJECT_PER_DAY = 2
 
 # A teacher may not be scheduled for more sessions than this on any single day
@@ -36,7 +36,7 @@ MAX_TEACHER_SESSIONS_PER_DAY = 3
 
 @dataclass(frozen=True)
 class Violation:
-    """One broken rule. Cheap to create — no string formatting — so this can be built
+    """One broken rule. Cheap to create no string formatting so this can be built
     for every violation on every fitness evaluation without it being the hot path."""
 
     constraint: str
@@ -49,7 +49,7 @@ def teacher_double_booked(
 ) -> list[Violation]:
     # A teacher cannot be in two sessions at once. Checked globally across every division
     # in the chromosome (not per-division), which is what makes this the same check that
-    # catches a cross-division clash (constraint 6) — see docs/CONSTRAINTS.md.
+    # catches a cross-division clash (constraint 6) see docs/CONSTRAINTS.md.
     seen: dict[tuple[int, str, int], int] = {}
     violations = []
     for index, (gene, requirement) in enumerate(zip(chromosome, requirements, strict=True)):
@@ -115,7 +115,7 @@ def division_double_booked(
     chromosome: Chromosome, requirements: list[SessionRequirement], divisions: dict[int, DivisionInfo]
 ) -> list[Violation]:
     # A division's students can only be in one session at a time. Checked per division, so
-    # two different divisions in the same period are fine — a joint session (division_ids
+    # two different divisions in the same period are fine a joint session (division_ids
     # has two entries) is one session belonging to both, not two sessions colliding.
     seen: dict[tuple[int, str, int], int] = {}
     violations = []
@@ -174,7 +174,7 @@ def same_subject_daily_spread(
     chromosome: Chromosome, requirements: list[SessionRequirement], divisions: dict[int, DivisionInfo]
 ) -> list[Violation]:
     # Constraint 7: a theory subject's weekly sessions for one division can't pile up more
-    # than MAX_SAME_SUBJECT_PER_DAY on a single day. Labs are exempt — a lab is one session,
+    # than MAX_SAME_SUBJECT_PER_DAY on a single day. Labs are exempt a lab is one session,
     # not part of this weekly spread. Every session past the cap on that day is flagged.
     by_division_course_day: dict[tuple[int, int, str], list[int]] = defaultdict(list)
     for index, (gene, requirement) in enumerate(zip(chromosome, requirements, strict=True)):
@@ -225,8 +225,8 @@ def one_subject_per_teacher_per_division(
 ) -> list[Violation]:
     # Constraint 9: within this one generation run, a teacher takes exactly one subject
     # in any division they appear in. Unlike constraints 1-8, this is a fact about the
-    # REQUIREMENTS (who's assigned to teach what), which the GA never changes — mutation
-    # only re-rolls room/day/slot, never course_id or teacher_id — so in normal operation
+    # REQUIREMENTS (who's assigned to teach what), which the GA never changes mutation
+    # only re-rolls room/day/slot, never course_id or teacher_id so in normal operation
     # this can never actually be violated by a generated chromosome. It's still checked
     # here, on the chromosome's own requirements, so it can be verified and deliberately
     # broken the same way every other constraint is (see the Phase 7 report).
@@ -282,13 +282,13 @@ def all_violations(
     teacher_availability: dict[int, set[str]],
 ) -> dict[str, list[Violation]]:
     # Every hard constraint, run once, kept separate so a failure can be read and blamed.
-    # This result is reused for fitness, elitism and mutation in one generation — never
+    # This result is reused for fitness, elitism and mutation in one generation never
     # recomputed twice per individual the way the dev scripts did (see module docstring).
     return _all_checks(chromosome, requirements, divisions, teacher_availability)
 
 
 def count_violations(all_violations_result: dict[str, list[Violation]]) -> int:
-    # Total violations across every constraint — the only thing fitness actually needs.
+    # Total violations across every constraint the only thing fitness actually needs.
     return sum(len(found) for found in all_violations_result.values())
 
 
@@ -298,7 +298,7 @@ def blamed_gene_indexes(all_violations_result: dict[str, list[Violation]]) -> se
 
 
 def describe(violation: Violation) -> str:
-    # Builds a human-readable message for ONE violation — called only when a violation
+    # Builds a human-readable message for ONE violation called only when a violation
     # actually needs to be shown to someone (API response, CLI report, test evidence),
     # never during the fitness/mutation hot path.
     c = violation.context

@@ -28,7 +28,7 @@ class Course(TimestampMixin, Base):
     # CourseScheme.content's semester grouping at materialization time (see
     # course_scheme_service.materialize_courses). Null for courses whose scheme predates
     # this column and hasn't been re-materialized, or for a scheme with no semester
-    # grouping at all (e.g. the Phase 7 synthetic timetable-derived scheme) — see
+    # grouping at all (e.g. the Phase 7 synthetic timetable-derived scheme) see
     # docs/PROJECT_AUDIT.md Phase 9 for why that one is deliberately left unset.
     semester: Mapped[int | None] = mapped_column(Integer, nullable=True)
 

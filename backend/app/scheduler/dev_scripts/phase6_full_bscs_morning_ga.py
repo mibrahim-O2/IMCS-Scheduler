@@ -1,6 +1,6 @@
 """Phase 6 dev script: the whole BS(CS) Morning shift, Part-I through Part-IV.
 
-Standalone like Phases 4 and 5 — no database, no API, no frontend. Everything comes
+Standalone like Phases 4 and 5 no database, no API, no frontend. Everything comes
 off the official "Class Time Table for 2nd Semester 2026, MORNING" PDF: page 1
 Part-I, page 2 Part-II, page 3 Part-III, page 4 Part-IV. Subjects, teachers by full
 name from each sheet's own legend, the days each person actually appears, and the
@@ -10,11 +10,11 @@ What the added sheets changed:
 
 * All four Parts split Pre-Medical / Pre-Engineering, so there are eight divisions.
 * Part-III and Part-IV are both printed with "ROOM NO:= 03 For PM and ROOM NO:= 04
-  For PE" — they share rooms. Until now each division had a room to itself and only
+  For PE" they share rooms. Until now each division had a room to itself and only
   labs could collide; now two divisions compete for the same lecture room.
 * The initials clash worse the more sheets you read. A.B is Dr. Asad Buledi on
   Part-I, Mr. Adil Bhatti on Part-II and Ms. Afia Bhutto on Part-III. H.B is
-  Dr. Hameedullah Bhutto on Part-I but Mr. Hammad Bhutto on Part-III — two
+  Dr. Hameedullah Bhutto on Part-I but Mr. Hammad Bhutto on Part-III two
   different people with nearly the same name. A.A is a teacher on Parts I and II
   and a subject (Analysis of Algorithms) on Part-III.
 
@@ -28,9 +28,9 @@ Note (post-cleanup): the hand-typed-from-PDF approach used below is
 superseded going forward by docs/timetable.json, a clean structured export
 covering all BSCS/BSAI Morning divisions with full teacher names and no
 initials ambiguity (it already includes BSAI, so the natural next dev
-script — full department scale — can read it directly instead of
+script full department scale can read it directly instead of
 transcribing more PDF sheets by hand). This file's own data and logic are
-left as-is — this is just a pointer for whoever writes that next script.
+left as-is this is just a pointer for whoever writes that next script.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ TIME_SLOTS = (
 )
 
 # Still an assumption: the PDF never names a room for lab sessions. Two labs is what the
-# real arrangement needs — Part-III runs two labs at once on Monday and Tuesday.
+# real arrangement needs Part-III runs two labs at once on Monday and Tuesday.
 LAB_ROOMS = ("Computer Lab 01", "Computer Lab 02")
 
 HARD_WEIGHT = 100
@@ -139,7 +139,7 @@ TEACHERS: dict[str, Teacher] = {
 
 
 class Gene(NamedTuple):
-    """One placed session — the gene shape from §6.1."""
+    """One placed session the gene shape from §6.1."""
 
     course_code: str
     teacher: str
@@ -210,11 +210,11 @@ PDF_SESSIONS: tuple[tuple[str, str, str, tuple[str, ...], int, int], ...] = (
     # --- BS(CS) Part-IV, Pre-Medical (Room 03) ---
     ("E.C", "E-Commerce", "Mr. Rajesh Kumar", ("P4-PM",), 3, 0),
     ("MAD", "Mobile Application Development", "Mr. Kamran Brohi", ("P4-PM",), 3, 0),
-    ("A.P", "A.P — undefined in the Part-IV legend", "Prof. Dr. Ayaz Keerio", ("P4-PM",), 3, 0),
+    ("A.P", "A.P undefined in the Part-IV legend", "Prof. Dr. Ayaz Keerio", ("P4-PM",), 3, 0),
     # --- BS(CS) Part-IV, Pre-Engineering (Room 04) ---
     ("E.C", "E-Commerce", "Mr. Zohaib Maqsood", ("P4-PE",), 3, 0),
     ("MAD", "Mobile Application Development", "Mr. Kamran Brohi", ("P4-PE",), 3, 0),
-    ("A.P", "A.P — undefined in the Part-IV legend", "Prof. Dr. Ayaz Keerio", ("P4-PE",), 3, 0),
+    ("A.P", "A.P undefined in the Part-IV legend", "Prof. Dr. Ayaz Keerio", ("P4-PE",), 3, 0),
 )
 
 
@@ -237,7 +237,7 @@ def rooms_for(requirement: SessionRequirement) -> tuple[str, ...]:
 
 
 def teacher_parts(requirements: list[SessionRequirement]) -> dict[str, set[str]]:
-    # Which Parts each teacher works in — the cross-Part pressure this phase is about.
+    # Which Parts each teacher works in the cross-Part pressure this phase is about.
     parts: dict[str, set[str]] = defaultdict(set)
     for requirement in requirements:
         parts[requirement.teacher].add(part_of(requirement.divisions[0]))
@@ -250,7 +250,7 @@ def multi_part_teachers(requirements: list[SessionRequirement], minimum: int = 2
 
 
 def shared_rooms() -> dict[str, list[str]]:
-    # Rooms that more than one division calls home — Part-III and Part-IV share 03 and 04.
+    # Rooms that more than one division calls home Part-III and Part-IV share 03 and 04.
     rooms: dict[str, list[str]] = defaultdict(list)
     for division in DIVISIONS.values():
         rooms[division.home_room].append(division.key)
@@ -347,7 +347,7 @@ def teacher_outside_availability(chromosome: Chromosome, requirements: list[Sess
 
 def division_double_booked(chromosome: Chromosome, requirements: list[SessionRequirement]) -> list[Violation]:
     # A group of students can only sit in one session at a time. Checked per division, so two
-    # different Parts in the same period are fine — different students.
+    # different Parts in the same period are fine different students.
     seen: dict[tuple[str, str, str], int] = {}
     violations = []
     for index, (gene, requirement) in enumerate(zip(chromosome, requirements, strict=True)):
@@ -431,7 +431,7 @@ def fitness(chromosome: Chromosome, requirements: list[SessionRequirement]) -> f
 def cross_part_teacher_clashes(chromosome: Chromosome, requirements: list[SessionRequirement]) -> list[str]:
     # A direct lens on the rule this phase stresses: a teacher working in several Parts must
     # never be in two of them at once. The general teacher check already penalises it, so this
-    # deliberately adds no extra penalty — it exists for evidence.
+    # deliberately adds no extra penalty it exists for evidence.
     overlapping = multi_part_teachers(requirements)
     placements: dict[tuple[str, str, str], list[tuple[str, str]]] = defaultdict(list)
     for gene, requirement in zip(chromosome, requirements, strict=True):
@@ -540,7 +540,7 @@ def evolve(
     mutation_mode: str,
     blame_rate: float = DEFAULT_BLAME_RATE,
 ) -> RunResult:
-    # Score everyone, carry the best through untouched, breed the rest — until the timetable is
+    # Score everyone, carry the best through untouched, breed the rest until the timetable is
     # clean or the generation cap is reached.
     mutate = MUTATION_MODES[mutation_mode]
     started = time.perf_counter()
@@ -599,7 +599,7 @@ def format_division_timetable(
         for day in DAYS:
             entry = placed.get((day, slot))
             if entry is None:
-                rows[0].append("—".ljust(width))
+                rows[0].append(" ".ljust(width))
                 rows[1].append("".ljust(width))
                 rows[2].append("".ljust(width))
                 continue
@@ -629,7 +629,7 @@ def format_compact_division(
             if division_key in requirement.divisions
         )
     )
-    lines = [f"{division.label}  (home room {division.home_room})  — {len(rows)} sessions"]
+    lines = [f"{division.label}  (home room {division.home_room}) {len(rows)} sessions"]
     for _, _, gene, requirement in rows:
         label = f"{gene.course_code}{' (LAB)' if requirement.is_lab else ''}{' *' if len(requirement.divisions) > 1 else ''}"
         lines.append(f"   {gene.day} {gene.time_slot}  {label:<14}{gene.teacher:<28}{gene.room}")
@@ -844,7 +844,7 @@ def main() -> None:
     requirements = build_session_requirements()
 
     print("=" * 128)
-    print("PHASE 6 — full BS(CS) Morning shift: Part-I, Part-II, Part-III, Part-IV")
+    print("PHASE 6 full BS(CS) Morning shift: Part-I, Part-II, Part-III, Part-IV")
     print("=" * 128)
     print_dataset(requirements)
 

@@ -32,7 +32,7 @@ export function TextReviewStep({
         <p className="mt-1 text-sm text-content/70">
           {METHOD_LABELS[extraction.method] ?? extraction.method}
           {pages > 0 && ` · ${pages} page${pages === 1 ? "" : "s"}`} ·{" "}
-          {extraction.character_count.toLocaleString()} characters. Correct anything that was misread — the
+          {extraction.character_count.toLocaleString()} characters. Correct anything that was misread the
           next step can fill course rows from this text.
         </p>
       </div>

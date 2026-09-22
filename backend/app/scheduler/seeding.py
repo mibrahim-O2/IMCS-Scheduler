@@ -3,14 +3,14 @@ clashes, instead of scattering every session at random.
 
 A pure-random start (chromosome.random_chromosome) begins with dozens of violations
 and leaves the whole search to repair them. On the full BSCS Part-I to Part-IV problem
-that stalls one or two violations short of zero — several teachers have exactly as many
+that stalls one or two violations short of zero several teachers have exactly as many
 sessions as their available days can hold (6 sessions on 2 days, at 3 per day), so the
 last few fixes need a very specific arrangement that random repair rarely stumbles onto.
 
 This builder places sessions one at a time, most-constrained first, and only takes a
 slot that doesn't break a rule against what is already placed. It is greedy, so it is
 NOT guaranteed to reach zero violations (a session can run out of clean slots, and then
-it falls back to a random placement) — it only has to start the population much closer
+it falls back to a random placement) it only has to start the population much closer
 to a good answer. The engine mixes these with random individuals to keep diversity.
 """
 
@@ -45,7 +45,7 @@ def constructive_chromosome(
     teacher_day_load: dict[tuple[int, str], int] = defaultdict(int)
     subject_day_count: dict[tuple[int, int, str], int] = defaultdict(int)
 
-    # Sessions whose teacher has the fewest available days go first — they have the least
+    # Sessions whose teacher has the fewest available days go first they have the least
     # room to move, so they must claim their slots before easier sessions crowd them out.
     # The random key breaks ties differently for each individual, which is what keeps
     # the constructive individuals from all being the same timetable.
@@ -88,7 +88,7 @@ def constructive_chromosome(
             break
 
         if chosen is None:
-            # Nothing clean is left for this one — take a random placement and let the
+            # Nothing clean is left for this one take a random placement and let the
             # evolutionary search repair it, rather than hiding the clash.
             chosen = random_gene(rng, requirement)
 

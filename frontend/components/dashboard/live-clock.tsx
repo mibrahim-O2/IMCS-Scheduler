@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 export function LiveClock() {
   // A small card that ticks the current date/time client-side, once a second, with no
-  // page reload — styled like the other stat cards so it reads as part of the same page,
+  // page reload styled like the other stat cards so it reads as part of the same page,
   // not a bolted-on widget.
   const [now, setNow] = useState<Date | null>(null);
 
@@ -33,11 +33,11 @@ export function LiveClock() {
 }
 
 function formatTime(date: Date): string {
-  // "14:05:09" — 24-hour, seconds included since this is a live-updating display.
+  // "14:05:09" 24-hour, seconds included since this is a live-updating display.
   return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
 }
 
 function formatDate(date: Date): string {
-  // "Tue, 22 Sep 2026" — short enough to sit on one line next to the calendar icon.
+  // "Tue, 22 Sep 2026" short enough to sit on one line next to the calendar icon.
   return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }

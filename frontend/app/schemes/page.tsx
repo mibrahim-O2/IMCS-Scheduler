@@ -95,7 +95,7 @@ export default function SchemesPage() {
   }, [loadSchemes]);
 
   useEffect(() => {
-    // Every step starts at the top — otherwise on a phone the next step opens mid-page.
+    // Every step starts at the top otherwise on a phone the next step opens mid-page.
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [stage]);
 

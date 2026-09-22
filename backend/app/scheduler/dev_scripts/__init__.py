@@ -3,7 +3,7 @@
 Nothing here is production code. These scripts are for trying an approach out
 end to end before any of it is promoted into app/scheduler/ proper.
 
-KEPT, NOT DELETED, as of Phase 8 — and the reason to keep them is now gone:
+KEPT, NOT DELETED, as of Phase 8 and the reason to keep them is now gone:
 Phase 7 kept these because production had reproduced phase4 but not phase5/6
 (the full 8-division problem stalled at 1-20 leftover violations). Phase 8's
 greedy starting population (scheduler/seeding.py) fixed that: the real engine

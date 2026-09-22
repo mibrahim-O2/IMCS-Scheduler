@@ -12,7 +12,7 @@ class DivisionCreate(BaseModel):
     part: int = Field(ge=1, le=4)
     semester: int = Field(ge=1, le=8)
     shift: str = Field(pattern="^(Morning|Evening)$")
-    # Null for a program with no PM/PE split (Mathematics — see
+    # Null for a program with no PM/PE split (Mathematics see
     # docs/PROJECT_ARCHITECTURE.md §11.1, still an open question for that program).
     group: str | None = Field(default=None, pattern="^(PM|PE)$")
 
@@ -38,14 +38,14 @@ class CourseAssignmentCreate(BaseModel):
     # Only meaningful when the course has a lab; the endpoint checks this against the
     # course's own has_lab rather than trusting the client to only send it when appropriate.
     lab_room_id: int | None = None
-    # A session shared with another division at once (e.g. History-II) — see
+    # A session shared with another division at once (e.g. History-II) see
     # docs/CONSTRAINTS.md constraint 5. Optional; most assignments don't need it.
     joint_division_id: int | None = None
 
 
 class CourseAssignmentUpdate(BaseModel):
     # Every field optional: only what the admin actually changed is sent. The course itself
-    # can't be changed this way — remove the row and add a new one instead, which keeps the
+    # can't be changed this way remove the row and add a new one instead, which keeps the
     # weekly-periods recompute (tied to the course) simple and unambiguous.
     teacher_id: int | None = None
     lecture_room_id: int | None = None

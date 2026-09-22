@@ -2,7 +2,7 @@
 
 fitness = -(hard_violation_count * HARD_WEIGHT), so a perfect timetable scores
 0.0 and every violation counts equally. There are no soft constraints yet
-(docs/PROJECT_ARCHITECTURE.md §6.2) — this file grows a second term for them
+(docs/PROJECT_ARCHITECTURE.md §6.2) this file grows a second term for them
 once those are designed.
 """
 

@@ -60,7 +60,7 @@ export default function BuildTimetablePage() {
   const [timetableDetail, setTimetableDetail] = useState<TimetableDetail | null>(null);
 
   useEffect(() => {
-    // Loads every schedulable program once, for the Program picker — non-schedulable
+    // Loads every schedulable program once, for the Program picker non-schedulable
     // levels (Master, PhD, ...) never get a Division, so they're left out.
     fetchDepartments()
       .then((departments) => setPrograms(departments.flatMap((d) => d.programs).filter((p) => p.is_schedulable)))
@@ -168,7 +168,7 @@ export default function BuildTimetablePage() {
         <p className="mt-1 text-sm text-content/70">
           Enter courses, teachers and rooms by hand for any program, then generate a real
           GA timetable for that one division. For BSCS Morning, the existing seed data
-          already covers this — use this page for BS(AI), Mathematics, or the Evening shift.
+          already covers this use this page for BS(AI), Mathematics, or the Evening shift.
         </p>
       </header>
 

@@ -3,7 +3,7 @@ import type { DivisionSchedule } from "@/lib/timetables";
 export function DivisionScheduleTable({ schedule }: { schedule: DivisionSchedule }) {
   // One division's whole week as a single table, flattened day by day (each day's rows
   // already come pre-sorted by time from the backend). A flat table scrolls sideways
-  // inside its own box on a phone instead of forcing a rigid day/period grid to fit —
+  // inside its own box on a phone instead of forcing a rigid day/period grid to fit 
   // same pattern as the Course Scheme feature's SemesterTable.
   const totalSessions = schedule.days.reduce((sum, day) => sum + day.sessions.length, 0);
 
@@ -32,7 +32,7 @@ export function DivisionScheduleTable({ schedule }: { schedule: DivisionSchedule
                     {session.start_time.slice(0, 5)}–{session.end_time.slice(0, 5)}
                   </td>
                   <td className="px-4 py-2">
-                    {session.course_code} — {session.course_name}
+                    {session.course_code} {session.course_name}
                     {session.is_lab && (
                       <span className="ml-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-content">
                         Lab

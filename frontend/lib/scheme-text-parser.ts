@@ -1,6 +1,6 @@
 /**
  * Reads course rows out of text extracted from a University of Sindh course
- * scheme page. It only pre-fills the form — the admin still checks every row.
+ * scheme page. It only pre-fills the form the admin still checks every row.
  */
 
 import { pairLabRows, type Program, type SemesterRows } from "@/lib/schemes";
@@ -13,7 +13,7 @@ export type ParsedScheme = {
 
 const ORDINALS = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH"];
 const SEMESTER_HEADING = /^(FIRST|SECOND|THIRD|FOURTH|FIFTH|SIXTH|SEVENTH|EIGHTH)\s+SEMESTER$/i;
-// "1 CSPF302 PROGRAMMING FUNDAMENTALS 3 50 100" — serial, code, name, credits (or NC), min, max.
+// "1 CSPF302 PROGRAMMING FUNDAMENTALS 3 50 100" serial, code, name, credits (or NC), min, max.
 const COURSE_LINE = /^\d+\s+([A-Z]{3,5}\d{3})\s+(.+?)\s+(NC|\d+)\s+(\d+)\s+(\d+)$/i;
 const SCHEME_YEAR = /Scheme\s+Year\s+(\d{4})/i;
 const PROGRAM_LINE = /^Program\s+(.+)$/im;

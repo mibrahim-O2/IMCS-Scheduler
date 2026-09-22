@@ -1,6 +1,6 @@
 """Classroom endpoints (docs/PROJECT_ARCHITECTURE.md §3.3, §4).
 
-Real CRUD, added in Phase 9 for the data-entry dashboard — before this, the only way to
+Real CRUD, added in Phase 9 for the data-entry dashboard before this, the only way to
 get a Classroom row into the database was the BSCS timetable seed script.
 """
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/classrooms")
 
 @router.get("", response_model=list[ClassroomRead])
 def list_classrooms(db: DbSession, type: str | None = None) -> list[ClassroomRead]:
-    # Every classroom on record, optionally narrowed to one type — the dashboard uses
+    # Every classroom on record, optionally narrowed to one type the dashboard uses
     # type="lab" to offer only Lab A-E for a lab room pre-assignment (Part 2), and no
     # filter (or type="lecture") for the lecture room dropdown.
     statement = select(Classroom).order_by(Classroom.name)

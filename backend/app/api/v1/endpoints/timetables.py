@@ -1,11 +1,11 @@
 """Timetable endpoints: trigger a real GA generation, list, view detail, and export.
 
-Calls scheduler/engine.py and contains no scheduling logic of its own — this
+Calls scheduler/engine.py and contains no scheduling logic of its own this
 file's job is turning a request into a call into the engine, and turning the
 engine's result into database rows and a response
 (docs/PROJECT_ARCHITECTURE.md §4, §6, §9).
 
-`run_generation()` is the one place that actually calls the engine and saves its result —
+`run_generation()` is the one place that actually calls the engine and saves its result
 both this file's own POST /generate and the Phase 9 data-entry dashboard's
 POST /divisions/{id}/finalize (app/api/v1/endpoints/divisions.py) call it, so there is one
 save path, not two copies of the same logic.
@@ -49,7 +49,7 @@ router = APIRouter(prefix="/timetables")
 
 def bscs_division_ids(db: DbSession) -> list[int]:
     # Every Division belonging to BS Computer Science specifically (not just any BS
-    # program) — the actual scope this phase seeds and schedules.
+    # program) the actual scope this phase seeds and schedules.
     return list(
         db.scalars(
             select(Division.id)
@@ -62,7 +62,7 @@ def bscs_division_ids(db: DbSession) -> list[int]:
 
 def run_generation(db: Session, division_ids: list[int], settings: GaSettings, label: str) -> GenerateResponse:
     # The one place that calls the real GA and saves its result as a draft Timetable +
-    # TimetableSession rows — draft, not published, because a human should review it first
+    # TimetableSession rows draft, not published, because a human should review it first
     # (docs/PROJECT_ARCHITECTURE.md §3.7). Both POST /generate below and the Phase 9
     # per-division "Finalize" flow (divisions.py) call this instead of each doing their own
     # engine call and save, so there is exactly one save path to keep correct.
@@ -123,10 +123,10 @@ def run_generation(db: Session, division_ids: list[int], settings: GaSettings, l
 @router.post("/generate", response_model=GenerateResponse, status_code=status.HTTP_201_CREATED)
 def generate(payload: GenerateRequest, db: DbSession) -> GenerateResponse:
     # Runs the real GA against real database data, defaulting to every BSCS division when
-    # none are named — see run_generation() above for the actual engine call and save.
+    # none are named see run_generation() above for the actual engine call and save.
     division_ids = payload.division_ids or bscs_division_ids(db)
     if not division_ids:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No BSCS divisions found — run the seed scripts first.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No BSCS divisions found run the seed scripts first.")
 
     settings = GaSettings(
         seed=payload.seed, population_size=payload.population_size, max_generations=payload.max_generations
@@ -145,7 +145,7 @@ def list_timetables(db: DbSession) -> list[TimetableSummary]:
 
 @router.get("/{timetable_id}", response_model=TimetableDetail)
 def get_timetable(timetable_id: int, db: DbSession) -> TimetableDetail:
-    # Full session detail, grouped by division then day then time — not a flat list the
+    # Full session detail, grouped by division then day then time not a flat list the
     # frontend has to re-sort itself.
     timetable = db.get(Timetable, timetable_id)
     if timetable is None:
@@ -209,7 +209,7 @@ def get_timetable(timetable_id: int, db: DbSession) -> TimetableDetail:
 
 @router.get("/{timetable_id}/export")
 def export_timetable(timetable_id: int, db: DbSession) -> StreamingResponse:
-    # Renders a saved timetable to a .docx file and streams it straight back — nothing is
+    # Renders a saved timetable to a .docx file and streams it straight back nothing is
     # written to disk or kept between requests, so a re-export always reflects the current
     # database state (docs/PROJECT_ARCHITECTURE.md §9).
     timetable = db.get(Timetable, timetable_id)

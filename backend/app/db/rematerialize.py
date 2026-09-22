@@ -1,7 +1,7 @@
 """Rebuilds Course rows from each scheme's stored content.
 
 Run with `python -m app.db.rematerialize` for every scheme, or pass scheme ids
-(`python -m app.db.rematerialize 6`). The content JSON is never modified — only
+(`python -m app.db.rematerialize 6`). The content JSON is never modified only
 the Course rows derived from it are regenerated, e.g. after the lab-pairing rule
 changed. See docs/PROJECT_ARCHITECTURE.md §3.5–§3.6.
 """

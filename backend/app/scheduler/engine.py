@@ -4,7 +4,7 @@ Takes a set of Division ids, reads everything it needs from the database
 (DivisionCourse, Teacher availability, Classroom), and returns a
 GenerationResult: either a converged (zero hard violations) chromosome, or an
 honest report that the run stagnated or hit its generation cap. This is the
-entry point the API's generate endpoint calls — it contains no HTTP or
+entry point the API's generate endpoint calls it contains no HTTP or
 database-write concerns of its own (docs/PROJECT_ARCHITECTURE.md §6.3).
 """
 
@@ -36,7 +36,7 @@ ALGORITHM_VERSION = "ga-v2-phase8"  # v2: greedy constructive starting populatio
 # How many generations without a fitness improvement before the run is considered
 # stagnant. Chosen from Phase 6's own numbers: its slowest converged run (population 120,
 # ~133 sessions) took 2080 generations, and one population-250 experiment sat at exactly
-# one violation for the full 3000-generation cap without ever recovering — so "no
+# one violation for the full 3000-generation cap without ever recovering so "no
 # improvement for 400 generations" is comfortably past normal slow progress but short
 # enough to trigger a restart before a run wastes thousands of generations doing nothing.
 STAGNATION_WINDOW = 400
@@ -46,7 +46,7 @@ STAGNATION_WINDOW = 400
 # an initial 3 after real testing on the full 8-division, 132-session, 9-constraint problem:
 # two runs on different seeds both stagnated with only a handful of violations left (7 and
 # 20), and each restart along the way visibly cut the violation count further before
-# stalling again — so more attempts is worth the (bounded) extra time rather than giving up
+# stalling again so more attempts is worth the (bounded) extra time rather than giving up
 # early on a search that keeps making real progress. See docs/PROJECT_AUDIT.md for the
 # measured numbers this is based on.
 MAX_RESTARTS = 8
@@ -68,7 +68,7 @@ class GaSettings:
     constructive_fraction: float = 0.5
 
     def as_dict(self) -> dict:
-        # For Timetable.generation_params — a record of exactly what settings produced this run.
+        # For Timetable.generation_params a record of exactly what settings produced this run.
         return {
             "population_size": self.population_size,
             "max_generations": self.max_generations,
@@ -100,7 +100,7 @@ class GenerationResult:
 
 def load_teacher_availability(session: Session, requirements: list[SessionRequirement]) -> dict[int, set[str]]:
     # Reads each involved teacher's declared availability days out of the database, once
-    # per run, into a plain dict — this is the real replacement for the dev scripts'
+    # per run, into a plain dict this is the real replacement for the dev scripts'
     # hardcoded TEACHERS dict.
     teacher_ids = {requirement.teacher_id for requirement in requirements}
     if not teacher_ids:
@@ -116,7 +116,7 @@ def _score(
     teacher_availability: dict[int, set[str]],
 ) -> tuple[float, dict[str, list[Violation]]]:
     # Runs every constraint exactly once for this chromosome and derives both the fitness
-    # score and the full violation detail from that single pass — the dev scripts computed
+    # score and the full violation detail from that single pass the dev scripts computed
     # this twice per individual (once for fitness, once for mutation's blame set), which
     # Phase 6 flagged as the likely main cost; this is the actual fix, not just deferring
     # message strings (see constraints/hard.py's module docstring).
@@ -159,7 +159,7 @@ def evolve(
     restarts_used = 0
 
     for generation in range(1, settings.max_generations + 1):
-        # Score every individual exactly once (fitness AND violation detail together —
+        # Score every individual exactly once (fitness AND violation detail together
         # see _score's docstring), then rank by fitness. best_violations is already
         # sitting right there, no second evaluation needed for the top individual.
         evaluated = [(*_score(c, requirements, divisions, teacher_availability), c) for c in population]
@@ -207,7 +207,7 @@ def evolve(
                 child = two_point_crossover(rng, parent_a, parent_b)
                 child_violations = all_violations(child, requirements, divisions, teacher_availability)
             else:
-                # No crossover this time — the child is an exact copy of parent_a, so its
+                # No crossover this time the child is an exact copy of parent_a, so its
                 # violations are already known; skip re-running all 9 constraints on it.
                 child = list(parent_a)
                 child_violations = violations_a
@@ -215,7 +215,7 @@ def evolve(
             next_population.append(mutate_targeted(rng, child, requirements, child_violations, settings.mutation_rate))
         population = next_population
 
-    # Ran out of generations without either converging or being declared stagnant — report
+    # Ran out of generations without either converging or being declared stagnant report
     # the best effort honestly, distinct from a clean convergence.
     final_scored = [(_score(c, requirements, divisions, teacher_availability), c) for c in population]
     (best_fitness, best_violations), best_chromosome = max(final_scored, key=lambda pair: pair[0][0])

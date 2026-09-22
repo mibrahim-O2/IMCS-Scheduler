@@ -20,7 +20,7 @@ export function TimetableList({
   loading: boolean;
   onView: (id: number) => void;
 }) {
-  // Every generated timetable as a stacked card — whether it converged, how many
+  // Every generated timetable as a stacked card whether it converged, how many
   // sessions it placed, and which divisions it covers, with a button to open the detail.
   if (loading) {
     return (

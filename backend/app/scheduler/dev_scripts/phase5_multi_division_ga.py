@@ -1,6 +1,6 @@
 """Phase 5 dev script: the GA across several divisions at once, on real PDF data.
 
-Standalone, like Phase 4 — no database, no API, no frontend. Everything below was
+Standalone, like Phase 4 no database, no API, no frontend. Everything below was
 read off the official "Class Time Table for 2nd Semester 2026, MORNING" PDF,
 pages 1 (BS(CS) Part-I) and 2 (BS(CS) Part-II): the subjects, who teaches them by
 full name from each sheet's own legend, the days each person actually appears, and
@@ -20,7 +20,7 @@ The GA machinery is the same as Phase 4 (tournament selection, elitism, two-poin
 crossover, mutation that only re-rolls room/day/slot). It is copied rather than
 imported so each dev script runs on its own. The one real change is that
 constraints now report which genes they blame, which lets mutation target the
-genes actually causing violations — see --mutation-mode.
+genes actually causing violations see --mutation-mode.
 
 Run it with:
     python -m app.scheduler.dev_scripts.phase5_multi_division_ga --runs 10
@@ -28,7 +28,7 @@ Run it with:
 Note (post-Phase 6 cleanup): the hand-typed-from-PDF approach used below is
 superseded going forward by docs/timetable.json, a clean structured export
 covering all BSCS/BSAI Morning divisions with full teacher names and no
-initials ambiguity. This file's own data and logic are left as-is — this is
+initials ambiguity. This file's own data and logic are left as-is this is
 just a pointer for whoever writes the next dev script.
 """
 
@@ -117,7 +117,7 @@ TEACHERS: dict[str, Teacher] = {
 
 
 class Gene(NamedTuple):
-    """One placed session — the gene shape from §6.1."""
+    """One placed session the gene shape from §6.1."""
 
     course_code: str
     teacher: str
@@ -143,7 +143,7 @@ Chromosome = list[Gene]
 # theory periods a week, how many lab periods. Period counts are what the PDF actually prints.
 # History-II is the one subject both Part-I groups attend together ("H-II(PM/PE)").
 PDF_SESSIONS: tuple[tuple[str, str, str, tuple[str, ...], int, int], ...] = (
-    # BS(CS) Part-I — Pre-Medical (Room 01)
+    # BS(CS) Part-I Pre-Medical (Room 01)
     ("E.W", "Expository Writing", "Ms. Madhia Khemtio", ("P1-PM",), 3, 0),
     ("M-II", "Mathematics-II", "Mr. M. Rafiq Mallah", ("P1-PM",), 3, 0),
     ("I.S", "Islamic Studies", "Dr. Hameedullah Bhutto", ("P1-PM",), 2, 0),
@@ -153,21 +153,21 @@ PDF_SESSIONS: tuple[tuple[str, str, str, tuple[str, ...], int, int], ...] = (
     ("UHQ-II", "Understanding Holy Quran-II", "Mr. Ahmed Raza Chandio", ("P1-PM",), 2, 0),
     # Taught to both Part-I groups in one room, so it is a single session in two divisions.
     ("H-II", "History-II (for non-Muslims)", "Ms. Asma Mughal", ("P1-PM", "P1-PE"), 2, 0),
-    # BS(CS) Part-I — Pre-Engineering (Room 02)
+    # BS(CS) Part-I Pre-Engineering (Room 02)
     ("I.S", "Islamic Studies", "Dr. Hameedullah Bhutto", ("P1-PE",), 2, 0),
     ("IOT", "Internet of Things (Basics)", "Dr. Altaf Abro", ("P1-PE",), 3, 0),
     ("E.W", "Expository Writing", "Ms. Madhia Khemtio", ("P1-PE",), 3, 0),
     ("OOP", "Object Oriented Programming", "Prof. Dr. Fida Chandio", ("P1-PE",), 3, 2),
     ("DLD", "Digital Logic Design", "Dr. Nazish Nawaz", ("P1-PE",), 3, 1),
     ("UHQ-II", "Understanding Holy Quran-II", "Mr. Ahmed Raza Chandio", ("P1-PE",), 2, 0),
-    # BS(CS) Part-II — Pre-Medical (Room 05)
+    # BS(CS) Part-II Pre-Medical (Room 05)
     ("C.A", "Computer Architecture", "Dr. Abdul Rehman Nangraj", ("P2-PM",), 3, 1),
     ("Q.R-II", "Quantitative Reasoning-II", "Mr. Asad Ali Khore", ("P2-PM",), 3, 0),
     ("EPS", "Entrepreneurship", "Dr. Shahmurad Chandio", ("P2-PM",), 2, 0),
     ("A.T", "Theory of Automata", "Mr. Fiaz Memon", ("P2-PM",), 3, 0),
     ("DBS", "Data Base System", "Dr. Gulsher Laghari", ("P2-PM",), 3, 1),
     ("P.P", "Professional Practices", "Mr. Adil Bhatti", ("P2-PM",), 2, 0),
-    # BS(CS) Part-II — Pre-Engineering (Room 06)
+    # BS(CS) Part-II Pre-Engineering (Room 06)
     ("P.P", "Professional Practices", "Mr. Yasir Nawaz", ("P2-PE",), 2, 0),
     ("Q.R-II", "Quantitative Reasoning-II", "Ms. Noor Ul Ain Soomro", ("P2-PE",), 3, 0),
     ("A.T", "Theory of Automata", "Mr. Fiaz Memon", ("P2-PE",), 3, 0),
@@ -196,7 +196,7 @@ def rooms_for(requirement: SessionRequirement) -> tuple[str, ...]:
 
 
 def shared_teachers(requirements: list[SessionRequirement]) -> dict[str, set[str]]:
-    # Teachers who work across more than one Part — the people this phase exists to stress.
+    # Teachers who work across more than one Part the people this phase exists to stress.
     parts: dict[str, set[str]] = defaultdict(set)
     for requirement in requirements:
         part = "Part-I" if requirement.divisions[0] in PART_I_DIVISIONS else "Part-II"
@@ -253,7 +253,7 @@ def teacher_double_booked(chromosome: Chromosome, requirements: list[SessionRequ
 
 
 def room_double_booked(chromosome: Chromosome, requirements: list[SessionRequirement]) -> list[Violation]:
-    # Two sessions cannot share a room in the same period — in practice this bites when two
+    # Two sessions cannot share a room in the same period in practice this bites when two
     # divisions both want a computer lab at once.
     seen: dict[tuple[str, str, str], int] = {}
     violations = []
@@ -292,7 +292,7 @@ def teacher_outside_availability(chromosome: Chromosome, requirements: list[Sess
 
 def division_double_booked(chromosome: Chromosome, requirements: list[SessionRequirement]) -> list[Violation]:
     # A group of students can only sit in one session at a time. Checked per division, so a
-    # Part-I session and a Part-II session in the same period are fine — different students.
+    # Part-I session and a Part-II session in the same period are fine different students.
     seen: dict[tuple[str, str, str], int] = {}
     violations = []
     for index, (gene, requirement) in enumerate(zip(chromosome, requirements, strict=True)):
@@ -476,7 +476,7 @@ def evolve(
     elite_count: int,
     mutation_mode: str,
 ) -> RunResult:
-    # Score everyone, carry the best through untouched, breed the rest — until the timetable is
+    # Score everyone, carry the best through untouched, breed the rest until the timetable is
     # clean or the generation cap is reached.
     mutate = MUTATION_MODES[mutation_mode]
     population = [random_chromosome(rng, requirements) for _ in range(population_size)]
@@ -531,7 +531,7 @@ def format_division_timetable(
         for day in DAYS:
             entry = placed.get((day, slot))
             if entry is None:
-                rows[0].append("—".ljust(width))
+                rows[0].append(" ".ljust(width))
                 rows[1].append("".ljust(width))
                 rows[2].append("".ljust(width))
                 continue
@@ -713,7 +713,7 @@ def main() -> None:
     requirements = build_session_requirements()
 
     print("=" * 128)
-    print("PHASE 5 — multi-division GA: BS(CS) Part-I and Part-II, Morning shift")
+    print("PHASE 5 multi-division GA: BS(CS) Part-I and Part-II, Morning shift")
     print("=" * 128)
     print_dataset(requirements)
 

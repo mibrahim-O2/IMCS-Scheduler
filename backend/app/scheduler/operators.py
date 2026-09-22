@@ -4,8 +4,8 @@ Phase 5-6 proved necessary for reliable convergence at real-department scale.
 Phase 4's original mutation (every gene an equal small chance of being
 re-placed) was tried again on Phase 5's problem size in Phase 6's report and
 only converged 2 of 5 times, with runs stalling at a single remaining
-violation for a thousand-plus generations. Targeted mutation — re-place the
-genes actually causing a violation, leave the rest mostly alone — got 10/10
+violation for a thousand-plus generations. Targeted mutation re-place the
+genes actually causing a violation, leave the rest mostly alone got 10/10
 in both Phase 5 and Phase 6, so that is the only mutation this module
 implements; there is no "simple" fallback to accidentally regress to.
 See docs/PROJECT_ARCHITECTURE.md §6.3.
@@ -18,7 +18,7 @@ from app.scheduler.constraints.hard import Violation, blamed_gene_indexes
 
 
 def tournament_select(rng: random.Random, evaluated: list[tuple], tournament_size: int) -> tuple:
-    # Samples a few already-scored individuals at random and returns the fittest of them —
+    # Samples a few already-scored individuals at random and returns the fittest of them
     # a real comparison, not an unconditioned random pick. `evaluated` rows are whatever
     # the caller scored them as (fitness, ...extra); only element 0 (fitness) is used to
     # compare, so the caller gets back the *whole* row, including anything it attached
@@ -30,7 +30,7 @@ def tournament_select(rng: random.Random, evaluated: list[tuple], tournament_siz
 def two_point_crossover(rng: random.Random, parent_a: Chromosome, parent_b: Chromosome) -> Chromosome:
     # Swaps a middle stretch of gene placements between two parents. Gene positions line
     # up with requirements for both parents, so the child is always a complete timetable.
-    # A gene whose requirement has a pre-assigned (fixed) room — Phase 9 — is unaffected by
+    # A gene whose requirement has a pre-assigned (fixed) room Phase 9 is unaffected by
     # which parent it's copied from: every individual's chromosome, everywhere, only ever
     # places that gene's room from SessionRequirement.candidate_rooms, which is a
     # single-element tuple for a fixed room. Both parents already agree on that one room at
@@ -59,10 +59,10 @@ def mutate_targeted(
 ) -> Chromosome:
     # Re-places genes actually causing a violation far more often than genes that are
     # already fine. Takes the violations dict the caller already computed for this
-    # chromosome (for fitness) instead of recomputing it here — see constraints/hard.py.
+    # chromosome (for fitness) instead of recomputing it here see constraints/hard.py.
     # A re-placed gene still can't leave a pre-assigned room: random_gene draws the room
     # from the requirement's candidate_rooms, which for a fixed room is one element (see
-    # chromosome.build_session_requirements) — day and slot are what actually move.
+    # chromosome.build_session_requirements) day and slot are what actually move.
     blamed = blamed_gene_indexes(all_violations_result)
     mutated = list(chromosome)
     for index, requirement in enumerate(requirements):

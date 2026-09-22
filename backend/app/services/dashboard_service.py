@@ -1,6 +1,6 @@
 """Dashboard queries.
 
-Today this only produces a stats overview — plain counts read from the
+Today this only produces a stats overview plain counts read from the
 database. The "what's happening right now" view in docs/PROJECT_ARCHITECTURE.md
 §8 needs published timetables, which do not exist yet, and will be added here
 once they do.

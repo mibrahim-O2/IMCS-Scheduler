@@ -1,6 +1,6 @@
 """Teacher endpoints, including declared availability (docs/PROJECT_ARCHITECTURE.md §3.4, §4).
 
-Real CRUD, added in Phase 9 for the data-entry dashboard — before this, the only way to
+Real CRUD, added in Phase 9 for the data-entry dashboard before this, the only way to
 get a Teacher row into the database was the BSCS timetable seed script.
 """
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/teachers")
 
 @router.get("", response_model=list[TeacherRead])
 def list_teachers(db: DbSession, program_id: int | None = None) -> list[TeacherRead]:
-    # Every teacher on record, optionally narrowed to one home program — the dashboard's
+    # Every teacher on record, optionally narrowed to one home program the dashboard's
     # teacher dropdown uses this, but a teacher can still be assigned outside their home
     # program (docs/PROJECT_ARCHITECTURE.md §3.4), so the filter is a convenience, not a rule.
     statement = select(Teacher).order_by(Teacher.full_name)

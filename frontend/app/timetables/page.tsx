@@ -20,9 +20,9 @@ type Notice = { tone: "success" | "error" | "warning"; text: string } | null;
 
 // With the greedy starting population the full BSCS problem normally comes back in a few
 // seconds, but a case the search can't solve cleanly still keeps trying for minutes before
-// it gives up — so the note promises neither extreme and the elapsed timer covers the rest.
+// it gives up so the note promises neither extreme and the elapsed timer covers the rest.
 const EXPECTED_WAIT_NOTE =
-  "This schedules all of BSCS Part-I to Part-IV at once — usually a few seconds, though a hard case can take a few minutes.";
+  "This schedules all of BSCS Part-I to Part-IV at once usually a few seconds, though a hard case can take a few minutes.";
 
 function formatElapsed(seconds: number): string {
   // Turns a running second count into "1m 42s" for the generating indicator.
@@ -82,12 +82,12 @@ export default function TimetablesPage() {
       const outcome = result.converged
         ? `converged in ${result.generation_count} generations`
         : result.stagnated
-          ? `stopped early — progress stalled after ${result.generation_count} generations`
+          ? `stopped early progress stalled after ${result.generation_count} generations`
           : `did not converge within ${result.generation_count} generations`;
       setNotice({
         tone: result.converged ? "success" : "warning",
         text: `Generation finished: ${outcome}, ${result.session_count} sessions placed in ${Math.round(result.wall_seconds)}s.${
-          result.conflict_list.length > 0 ? ` ${result.conflict_list.length} conflict(s) remain — open it to review them.` : ""
+          result.conflict_list.length > 0 ? ` ${result.conflict_list.length} conflict(s) remain open it to review them.` : ""
         }`,
       });
       await loadTimetables();

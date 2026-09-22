@@ -83,7 +83,7 @@ def _extract_pdf(data: bytes) -> ExtractionResult:
     ocr_text = _ocr_pdf(data)
     warning = (
         "This PDF has no usable text layer, so it was read with OCR. "
-        "Check the text carefully — OCR misreads characters."
+        "Check the text carefully OCR misreads characters."
     )
     return ExtractionResult(text=ocr_text, method="ocr", page_count=page_count, warnings=[warning])
 

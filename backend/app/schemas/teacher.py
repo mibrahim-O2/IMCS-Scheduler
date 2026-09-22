@@ -9,7 +9,7 @@ DAY_CHOICES = ("Mon", "Tue", "Wed", "Thu", "Fri")
 
 
 class TeacherAvailability(BaseModel):
-    # Which weekdays this teacher has said they can teach — the GA's own input constraint,
+    # Which weekdays this teacher has said they can teach the GA's own input constraint,
     # not something it ever infers or overrides.
     days: list[str] = Field(default_factory=list)
 

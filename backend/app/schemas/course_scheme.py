@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ExtractionResponse(BaseModel):
     filename: str
-    method: str  # "pdf-text", "ocr" or "word" — the frontend tells the admin which was used
+    method: str  # "pdf-text", "ocr" or "word" the frontend tells the admin which was used
     page_count: int
     character_count: int
     text: str
@@ -74,7 +74,7 @@ class SchemeDetail(SchemeSummary):
 
 
 class CourseListItem(BaseModel):
-    # One materialized Course row, for the Phase 9 dashboard's course-by-semester dropdown —
+    # One materialized Course row, for the Phase 9 dashboard's course-by-semester dropdown
     # distinct from CourseRow above, which is the pre-save shape used while editing a scheme.
     id: int
     scheme_id: int

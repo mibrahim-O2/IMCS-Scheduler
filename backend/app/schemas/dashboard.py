@@ -1,6 +1,6 @@
 """Response schema for the stats overview.
 
-Counts only — not teacher or room availability, which needs generated
+Counts only not teacher or room availability, which needs generated
 timetables. See docs/PROJECT_ARCHITECTURE.md §8.
 """
 

@@ -2,7 +2,7 @@
 straight from the database instead of a hardcoded Python dict.
 
 One chromosome is a full candidate timetable covering every division passed
-to `build_session_requirements`. Each gene is (room, day, start_time) — the
+to `build_session_requirements`. Each gene is (room, day, start_time) the
 part the GA actually searches over. The course/teacher pairing for that gene
 is fixed ahead of time (from DivisionCourse, seeded from real data) and lives
 in the parallel `requirements` list at the same index; mutation only ever
@@ -26,7 +26,7 @@ DAYS: tuple[str, ...] = ("Mon", "Tue", "Wed", "Thu", "Fri")
 
 # The six 50-minute periods the real timetable runs on (docs/timetable.json), as
 # (label, start "HH:MM", end "HH:MM"). Index into this list is what a gene stores,
-# rather than repeating the strings — cheaper to compare and to place in a dict key.
+# rather than repeating the strings cheaper to compare and to place in a dict key.
 TIME_SLOTS: tuple[tuple[str, str, str], ...] = (
     ("08:30-09:20", "08:30", "09:20"),
     ("09:20-10:10", "09:20", "10:10"),
@@ -38,7 +38,7 @@ TIME_SLOTS: tuple[tuple[str, str, str], ...] = (
 
 
 class Gene(NamedTuple):
-    """The variable part of one placed session — what mutation is allowed to change."""
+    """The variable part of one placed session what mutation is allowed to change."""
 
     room_id: int
     day: str
@@ -93,7 +93,7 @@ def load_lab_room_ids(session: Session) -> tuple[int, ...]:
 
 def build_session_requirements(session: Session, division_ids: list[int]) -> list[SessionRequirement]:
     # Turns every DivisionCourse row owned by one of these divisions into the weekly
-    # theory sessions (and lab sessions, where the assignment has one) it needs — this
+    # theory sessions (and lab sessions, where the assignment has one) it needs this
     # is the real, seeded equivalent of the dev scripts' hand-typed PDF_SESSIONS tuples.
     divisions = load_divisions(session, division_ids)
     lab_room_ids = load_lab_room_ids(session)
@@ -108,18 +108,18 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
         # A theory session's room: the assignment's own pre-assigned lecture room (set per
         # course through the Phase 9 data-entry dashboard) if there is one, otherwise the
         # division's one fixed room (how every BSCS Part-I to Part-IV assignment from Phase
-        # 7-8.1 still works — none of them set lecture_room_id). Either way this is a single
+        # 7-8.1 still works none of them set lecture_room_id). Either way this is a single
         # room, never a pool: a theory session's room search space is one option, same
         # design as always, just sourced from two possible places now.
         theory_room_id = assignment.lecture_room_id or division.home_room_id
         if theory_room_id is None:
             raise ValueError(
-                f"{division.label}: course {assignment.course_id} has no lecture room — set one on the "
+                f"{division.label}: course {assignment.course_id} has no lecture room set one on the "
                 "assignment, or set the division's home_room_id."
             )
 
         # A joint session (e.g. History-II) belongs to two divisions at once, but only if
-        # the other division was actually included in this run — otherwise it is simply a
+        # the other division was actually included in this run otherwise it is simply a
         # normal single-division session for the one division that was requested.
         division_ids_for_gene = (assignment.division_id,)
         if assignment.joint_division_id is not None and assignment.joint_division_id in divisions:
@@ -138,17 +138,17 @@ def build_session_requirements(session: Session, division_ids: list[int]) -> lis
             )
 
         if assignment.has_lab and assignment.lab_teacher_id and assignment.weekly_lab_periods:
-            # A pre-assigned lab room (Phase 9) narrows the search to that one lab — a
+            # A pre-assigned lab room (Phase 9) narrows the search to that one lab a
             # single-element tuple, exactly like a fixed theory room above. Left unset, a lab
             # session may use any of the shared labs, as it always has since Phase 8.1.
             # Either way, mutation and crossover choose among (or copy) only what's in this
-            # tuple, so a pre-assigned room can never be reassigned — see operators.py.
+            # tuple, so a pre-assigned room can never be reassigned see operators.py.
             if assignment.lab_room_id is not None:
                 lab_candidate_rooms: tuple[int, ...] = (assignment.lab_room_id,)
             elif lab_room_ids:
                 lab_candidate_rooms = lab_room_ids
             else:
-                raise ValueError(f"{division.label} has a lab course but no lab rooms exist — re-run the seed.")
+                raise ValueError(f"{division.label} has a lab course but no lab rooms exist re-run the seed.")
             for _ in range(assignment.weekly_lab_periods):
                 requirements.append(
                     SessionRequirement(

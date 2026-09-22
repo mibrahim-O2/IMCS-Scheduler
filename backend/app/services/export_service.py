@@ -1,6 +1,6 @@
 """Render a saved Timetable to Word (.docx) with the IMCS logo in the header.
 
-See docs/PROJECT_ARCHITECTURE.md §9. PDF export is not built in Phase 9 — see
+See docs/PROJECT_ARCHITECTURE.md §9. PDF export is not built in Phase 9 see
 docs/PROJECT_AUDIT.md for what's still open.
 """
 
@@ -56,7 +56,7 @@ def build_timetable_document(session: Session, timetable: Timetable) -> bytes:
             cells = table.add_row().cells
             cells[0].text = row["day"]
             cells[1].text = f"{row['start_time']}–{row['end_time']}"
-            course_text = f"{row['course_code']} — {row['course_name']}"
+            course_text = f"{row['course_code']} {row['course_name']}"
             if row["is_lab"]:
                 course_text += " (Lab)"
             cells[2].text = course_text
@@ -85,7 +85,7 @@ def _add_logo_header(document: Document) -> None:
 def _collect_schedule(session: Session, timetable_id: int) -> list[tuple[int, str, list[dict]]]:
     # Reads the saved sessions straight from the database and groups them the same way the
     # /timetables/{id} API response does (division -> day, in Mon-Fri order, each day sorted
-    # by start time) — kept as a self-contained read here rather than imported from the
+    # by start time) kept as a self-contained read here rather than imported from the
     # endpoint layer, since this is a plain query with no scheduling logic to share.
     sessions = session.scalars(
         select(TimetableSession).where(TimetableSession.timetable_id == timetable_id)

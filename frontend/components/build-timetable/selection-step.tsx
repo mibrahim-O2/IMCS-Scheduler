@@ -20,14 +20,14 @@ const SEMESTER_HALF_OPTIONS = [
 const SHIFT_TIME_RANGES: Record<string, string> = {
   Morning: "08:30 – 13:30",
   // Evening scheduling isn't implemented yet (no real teacher-availability data exists for
-  // it) — this placeholder range is shown, not invented as if it were real, per the
+  // it) this placeholder range is shown, not invented as if it were real, per the
   // dashboard's design: say so plainly rather than pretending Evening already works.
-  Evening: "not yet scheduled — placeholder only",
+  Evening: "not yet scheduled placeholder only",
 };
 
 // Step 1-2: pick which division this session is building, and see its shift's time range.
 // Group (PM/PE) is hidden for Mathematics, which has no confirmed PM/PE split
-// (docs/PROJECT_ARCHITECTURE.md §11.1 — still an open question, not silently assumed either way).
+// (docs/PROJECT_ARCHITECTURE.md §11.1 still an open question, not silently assumed either way).
 export function SelectionStep({
   programs,
   programId,
@@ -67,7 +67,7 @@ export function SelectionStep({
       <div>
         <h2 className="text-lg font-semibold text-content">1. Choose what you're building</h2>
         <p className="mt-1 text-sm text-content/70">
-          One division at a time — a specific Program + Part + Semester + Shift (+ Group).
+          One division at a time a specific Program + Part + Semester + Shift (+ Group).
         </p>
       </div>
 

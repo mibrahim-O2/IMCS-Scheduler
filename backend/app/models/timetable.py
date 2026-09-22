@@ -1,18 +1,18 @@
 """Timetable and TimetableSession models.
 
-Timetable is a generation RUN — the result of one GA call — with a status,
+Timetable is a generation RUN the result of one GA call with a status,
 fitness score, and whether it actually converged. TimetableSession is one
 placed session (one materialized GA gene).
 
 Deviation from the original §3.7 sketch, made deliberately in Phase 7:
-the sketch had `Timetable.division_id` (singular) — one Timetable per one
+the sketch had `Timetable.division_id` (singular) one Timetable per one
 Division. Phase 5-6 proved the GA has to schedule several divisions in one
 combined chromosome to catch cross-division teacher clashes at all (see
 docs/CONSTRAINTS.md constraint 6), and the real data has sessions shared by
 two divisions at once (a joint PM/PE class). A single `division_id` column
 cannot represent either of those. So a Timetable now represents one
 generation run across however many divisions were requested, and each
-TimetableSession carries its own `division_ids` (a JSONB array — normally
+TimetableSession carries its own `division_ids` (a JSONB array normally
 one id, two for a joint session) instead of inheriting one division from its
 parent Timetable. This is recorded here and in docs/PROJECT_AUDIT.md so it
 isn't mistaken for an oversight.
@@ -56,13 +56,13 @@ class Timetable(TimestampMixin, Base):
     algorithm_version: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Which divisions were requested, and the GA's own run settings (population, generation
-    # cap, mutation rate, etc.) — kept for reproducibility, per §3.7.
+    # cap, mutation rate, etc.) kept for reproducibility, per §3.7.
     generation_params: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
     fitness_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # True only if the GA actually reached zero hard violations. False means it stopped
-    # early (stagnation) or hit the generation cap — the caller must not treat that as success.
+    # early (stagnation) or hit the generation cap the caller must not treat that as success.
     converged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     generation_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
@@ -80,7 +80,7 @@ class Timetable(TimestampMixin, Base):
 
 
 class TimetableSession(TimestampMixin, Base):
-    """One placed session — one materialized GA gene."""
+    """One placed session one materialized GA gene."""
 
     __tablename__ = "timetable_sessions"
 
@@ -92,7 +92,7 @@ class TimetableSession(TimestampMixin, Base):
     teacher_id: Mapped[int] = mapped_column(ForeignKey("teachers.id", ondelete="RESTRICT"), nullable=False)
     room_id: Mapped[int] = mapped_column(ForeignKey("classrooms.id", ondelete="RESTRICT"), nullable=False)
 
-    # Which division(s) this session belongs to — a list because a joint PM/PE session
+    # Which division(s) this session belongs to a list because a joint PM/PE session
     # belongs to two divisions at once. See the module docstring for why this replaces a
     # singular division_id on the parent Timetable.
     division_ids: Mapped[list[int]] = mapped_column(JSONB, nullable=False)

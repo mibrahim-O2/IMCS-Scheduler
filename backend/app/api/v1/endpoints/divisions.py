@@ -1,7 +1,7 @@
-"""Division and DivisionCourse endpoints — the Phase 9 data-entry dashboard's backend.
+"""Division and DivisionCourse endpoints the Phase 9 data-entry dashboard's backend.
 
 Lets an admin build up a division's course/teacher/room assignments by hand for any
-program/shift/part/semester/group, then finalize them into a real GA run — the general
+program/shift/part/semester/group, then finalize them into a real GA run the general
 tool BSCS Morning no longer needs (it has its own seed script) but BS(AI), Mathematics and
 the Evening shift will, once their data exists. See docs/PROJECT_ARCHITECTURE.md §3.2 and
 docs/PROJECT_AUDIT.md Phase 9.
@@ -35,7 +35,7 @@ GROUP_LABELS = {"PM": "Pre-Medical", "PE": "Pre-Engineering"}
 
 @router.post("", response_model=DivisionRead, status_code=status.HTTP_201_CREATED)
 def create_division(payload: DivisionCreate, db: DbSession) -> DivisionRead:
-    # Get-or-create on the natural key (program, part, shift, group, semester) — idempotent,
+    # Get-or-create on the natural key (program, part, shift, group, semester) idempotent,
     # like the seed script's own upserts, so re-selecting the same combination in the
     # dashboard never fails with a duplicate-key error, it just returns the same division.
     program = db.get(Program, payload.program_id)
@@ -77,7 +77,7 @@ def list_divisions(
     shift: str | None = None,
     group: str | None = None,
 ) -> list[DivisionRead]:
-    # Every division on record, narrowed by whichever filters are given — the dashboard uses
+    # Every division on record, narrowed by whichever filters are given the dashboard uses
     # this to check whether a division already exists for a chosen combination.
     statement = select(Division).order_by(Division.program_id, Division.part, Division.semester)
     for column, value in (
@@ -94,7 +94,7 @@ def list_divisions(
 
 @router.get("/{division_id}", response_model=DivisionRead)
 def get_division(division_id: int, db: DbSession) -> DivisionRead:
-    # One division's own record — status of its assignment lock included, since the
+    # One division's own record status of its assignment lock included, since the
     # dashboard needs to know whether it can still be edited.
     return _to_read(_get_division_or_404(db, division_id))
 
@@ -126,7 +126,7 @@ def check_teacher_conflict(
     return TeacherConflictCheck(
         conflict=True,
         message=(
-            f"{teacher_name} is already assigned {conflict_course} in this division — "
+            f"{teacher_name} is already assigned {conflict_course} in this division "
             "one subject per teacher per division (constraint 9)."
         ),
     )
@@ -136,7 +136,7 @@ def check_teacher_conflict(
 def add_course_assignment(division_id: int, payload: CourseAssignmentCreate, db: DbSession) -> CourseAssignmentRead:
     # Adds one course+teacher+rooms row to the division's draft list. Weekly theory/lab
     # periods are derived from the course's own credit hours here, not trusted from the
-    # client — "auto-computed, not manually typed" per the dashboard's design.
+    # client "auto-computed, not manually typed" per the dashboard's design.
     division = _get_division_or_404(db, division_id)
     _require_unlocked(division)
 
@@ -152,7 +152,7 @@ def add_course_assignment(division_id: int, payload: CourseAssignmentCreate, db:
     if conflict_course is not None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"{teacher.full_name} is already assigned {conflict_course} in this division — "
+            f"{teacher.full_name} is already assigned {conflict_course} in this division "
             "one subject per teacher per division (constraint 9).",
         )
 
@@ -166,7 +166,7 @@ def add_course_assignment(division_id: int, payload: CourseAssignmentCreate, db:
 
     # The dashboard's single teacher dropdown covers both theory and lab for a course added
     # this way (Phase 9 keeps the flow to one teacher per course row, unlike the BSCS seed
-    # data where a lab can have a different instructor) — see docs/PROJECT_AUDIT.md Phase 9.
+    # data where a lab can have a different instructor) see docs/PROJECT_AUDIT.md Phase 9.
     assignment = DivisionCourse(
         division_id=division_id,
         course_id=course.id,
@@ -189,7 +189,7 @@ def add_course_assignment(division_id: int, payload: CourseAssignmentCreate, db:
 def update_course_assignment(
     division_id: int, assignment_id: int, payload: CourseAssignmentUpdate, db: DbSession
 ) -> CourseAssignmentRead:
-    # Edits a draft row in place — teacher and/or rooms only (see CourseAssignmentUpdate).
+    # Edits a draft row in place teacher and/or rooms only (see CourseAssignmentUpdate).
     division = _get_division_or_404(db, division_id)
     _require_unlocked(division)
     assignment = _get_assignment_or_404(db, division_id, assignment_id)
@@ -206,7 +206,7 @@ def update_course_assignment(
         if conflict_course is not None:
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                f"{teacher.full_name} is already assigned {conflict_course} in this division — "
+                f"{teacher.full_name} is already assigned {conflict_course} in this division "
                 "one subject per teacher per division (constraint 9).",
             )
         assignment.teacher_id = new_teacher_id
@@ -243,7 +243,7 @@ def remove_course_assignment(division_id: int, assignment_id: int, db: DbSession
 def finalize_division(division_id: int, db: DbSession) -> GenerateResponse:
     # Locks the assignment list (so it can't be edited out from under a result the admin is
     # about to look at) and runs the real GA for this one division, via the same
-    # run_generation() that POST /timetables/generate uses — see timetables.py's module
+    # run_generation() that POST /timetables/generate uses see timetables.py's module
     # docstring for why this isn't a second copy of the save logic. Calling finalize again
     # on an already-locked division is allowed (a fresh generation attempt from the same
     # fixed list); it just doesn't re-lock what's already locked.
@@ -263,10 +263,10 @@ def finalize_division(division_id: int, db: DbSession) -> GenerateResponse:
 
 def _build_label(program_name: str, part: int, shift: str, group: str | None) -> str:
     # Human-readable division label, same shape the BSCS seed script builds
-    # ("BS Computer Science Part-I (Morning) — Pre-Medical"), minus the group suffix for a
-    # program with no PM/PE split (Mathematics — docs/PROJECT_ARCHITECTURE.md §11.1).
+    # ("BS Computer Science Part-I (Morning) Pre-Medical"), minus the group suffix for a
+    # program with no PM/PE split (Mathematics docs/PROJECT_ARCHITECTURE.md §11.1).
     base = f"{program_name} Part-{PART_ROMAN[part]} ({shift})"
-    return f"{base} — {GROUP_LABELS[group]}" if group else base
+    return f"{base} {GROUP_LABELS[group]}" if group else base
 
 
 def _get_division_or_404(db: Session, division_id: int) -> Division:
@@ -286,7 +286,7 @@ def _get_assignment_or_404(db: Session, division_id: int, assignment_id: int) ->
 
 
 def _require_unlocked(division: Division) -> None:
-    # The one enforcement point for "finalized means locked" — every add/edit/remove
+    # The one enforcement point for "finalized means locked" every add/edit/remove
     # endpoint calls this before touching a row.
     if division.assignments_locked_at is not None:
         raise HTTPException(
@@ -316,7 +316,7 @@ def _find_teacher_conflict(
 
 
 def _validate_rooms(db: Session, course: Course, lecture_room_id: int, lab_room_id: int | None) -> None:
-    # Confirms the rooms actually exist and, for the lab room, is actually typed as a lab —
+    # Confirms the rooms actually exist and, for the lab room, is actually typed as a lab
     # a clear 400 beats a foreign-key error or a silently wrong room type.
     lecture_room = db.get(Classroom, lecture_room_id)
     if lecture_room is None:
@@ -324,14 +324,14 @@ def _validate_rooms(db: Session, course: Course, lecture_room_id: int, lab_room_
 
     if course.has_lab:
         if lab_room_id is None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{course.name} has a lab — choose a lab room.")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{course.name} has a lab choose a lab room.")
         lab_room = db.get(Classroom, lab_room_id)
         if lab_room is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Classroom {lab_room_id} does not exist.")
         if lab_room.type != ClassroomType.LAB:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{lab_room.name} is not a lab room.")
     elif lab_room_id is not None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{course.name} has no lab — remove the lab room.")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{course.name} has no lab remove the lab room.")
 
 
 def _to_read(division: Division) -> DivisionRead:

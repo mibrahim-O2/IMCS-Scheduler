@@ -26,7 +26,7 @@ from app.services import course_scheme_service as service
 
 router = APIRouter(prefix="/course-schemes")
 
-# A separate router for /api/v1/courses — a different resource (materialized Course rows)
+# A separate router for /api/v1/courses a different resource (materialized Course rows)
 # from /course-schemes (the uploaded documents they're materialized from), so it gets its
 # own prefix even though both live in this file for now.
 courses_router = APIRouter(prefix="/courses")
@@ -41,7 +41,7 @@ MANUAL_SCHEME_YEAR = 9999
 @router.post("/extract", response_model=ExtractionResponse)
 async def extract_scheme_text(file: Annotated[UploadFile, File()]) -> ExtractionResponse:
     # Step 1: read the uploaded document and hand its text back for the admin to review.
-    # Nothing is stored here — this is a read-only preview of the file.
+    # Nothing is stored here this is a read-only preview of the file.
     data = await file.read()
     if not data:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The uploaded file is empty.")
@@ -174,7 +174,7 @@ def list_courses(db: DbSession, program_id: int, semester: int) -> list[CourseLi
     # Course dropdown for the Phase 9 data-entry dashboard: every course for this program's
     # currently active Course Scheme, plus anything added through "add a new subject" below
     # (its manual scheme is deliberately inactive, so it's included by scheme_year, not by
-    # is_active — see MANUAL_SCHEME_YEAR's comment).
+    # is_active see MANUAL_SCHEME_YEAR's comment).
     scheme_ids = db.scalars(
         select(CourseScheme.id).where(
             CourseScheme.program_id == program_id,
@@ -200,7 +200,7 @@ def list_courses(db: DbSession, program_id: int, semester: int) -> list[CourseLi
 
 @courses_router.post("", response_model=CourseListItem, status_code=status.HTTP_201_CREATED)
 def add_subject(payload: NewSubjectCreate, db: DbSession) -> CourseListItem:
-    # "Add a new subject" without a full Course Scheme upload — creates (or reuses) this
+    # "Add a new subject" without a full Course Scheme upload creates (or reuses) this
     # program's manual scheme, then one Course row in it, with a generated code since no
     # official document names one.
     program = db.get(Program, payload.program_id)
@@ -220,7 +220,7 @@ def add_subject(payload: NewSubjectCreate, db: DbSession) -> CourseListItem:
             content={
                 "note": (
                     "Subjects added one at a time through the build-timetable dashboard "
-                    "(Phase 9) — not an official Course Scheme upload."
+                    "(Phase 9) not an official Course Scheme upload."
                 )
             },
         )

@@ -1,4 +1,4 @@
-"""Teacher model, resolved by full name — never by initials, which collide.
+"""Teacher model, resolved by full name never by initials, which collide.
 
 Cross-program load is derived from timetable sessions later, so nothing here
 restricts a teacher to their home program. See docs/PROJECT_ARCHITECTURE.md §3.4.
