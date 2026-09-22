@@ -15,7 +15,9 @@ Part-I PE in the real timetable). This table is the direct, real, seeded
 input the GA reads instead of a hardcoded Python dict.
 """
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -29,7 +31,14 @@ from app.models.teacher import Teacher
 class Division(TimestampMixin, Base):
     __tablename__ = "divisions"
     __table_args__ = (
-        UniqueConstraint("program_id", "part", "shift", "group", name="uq_division_program_part_shift_group"),
+        # semester joined the key in Phase 9: a Part spans two semesters (e.g. Part-II is
+        # semesters 3 and 4), and the data-entry dashboard needs a separate Division row for
+        # each one, not one row that can only ever represent "the current semester" of a Part
+        # the way the Phase 7 seed used it. Existing rows (semester already set, one per Part)
+        # stay unique under the wider key without any data change.
+        UniqueConstraint(
+            "program_id", "part", "shift", "group", "semester", name="uq_division_program_part_shift_group_semester"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -40,9 +49,9 @@ class Division(TimestampMixin, Base):
     # into one confusing field. Split cleanly here: part is 1-4, semester below is 1-8.
     part: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # The actual semester currently running within this part (1-8), where known. Nullable
-    # because it's an inference from which semester's subjects the real timetable shows,
-    # not a certainty — see docs/PROJECT_ARCHITECTURE.md §11.2 on scheme-vs-real-taught mismatch.
+    # Which of the two semesters within this Part this Division is (1-8 overall). Nullable
+    # for older data where it was only an inference; the Phase 9 data-entry dashboard always
+    # sets it explicitly, since it's now part of the row's own identity (see __table_args__).
     semester: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     shift: Mapped[str | None] = mapped_column(String(20), nullable=True)  # "Morning" | "Evening" | null (Math)
@@ -66,6 +75,13 @@ class Division(TimestampMixin, Base):
     # (Lab A-E) that any division may use, so the GA picks a lab per session from that
     # shared pool instead (see scheduler/chromosome.py).
     home_room_id: Mapped[int | None] = mapped_column(ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True)
+
+    # Set when the admin finalizes this division's course assignments through the Phase 9
+    # data-entry dashboard (POST /divisions/{id}/finalize). Null means the assignment list is
+    # still a draft and can be edited; once set, the endpoints that add/edit/remove a
+    # DivisionCourse for this division refuse the request instead of silently allowing an
+    # edit after the GA has already run against the old list.
+    assignments_locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     program: Mapped[Program] = relationship()
     course_scheme: Mapped[CourseScheme | None] = relationship()
@@ -110,6 +126,15 @@ class DivisionCourse(TimestampMixin, Base):
     division sitting together (e.g. History-II taught to Part-I PM and PE at
     once) — the PM row alone represents the joint session; PE does not get
     its own separate row for it. See docs/CONSTRAINTS.md constraint 5.
+
+    `lecture_room_id` and `lab_room_id`, added in Phase 9, are this course's own
+    pre-assigned rooms, set per assignment through the data-entry dashboard rather than
+    inherited from the division as a whole. `lecture_room_id` null falls back to
+    `Division.home_room_id` (how every BSCS Part-I to Part-IV assignment from Phase 7-8.1
+    still works — none of them set it). `lab_room_id` null falls back to the shared lab
+    pool (Lab A-E, see scheduler/chromosome.py); set, it fixes the GA's search to that one
+    lab for every session this assignment needs, which is the whole point of pre-assigning
+    it — see docs/PROJECT_AUDIT.md Phase 9.
     """
 
     __tablename__ = "division_courses"
@@ -129,8 +154,13 @@ class DivisionCourse(TimestampMixin, Base):
         ForeignKey("divisions.id", ondelete="SET NULL"), nullable=True
     )
 
+    lecture_room_id: Mapped[int | None] = mapped_column(ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True)
+    lab_room_id: Mapped[int | None] = mapped_column(ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True)
+
     division: Mapped[Division] = relationship(back_populates="courses", foreign_keys=[division_id])
     joint_division: Mapped[Division | None] = relationship(foreign_keys=[joint_division_id])
     course: Mapped[Course] = relationship()
     teacher: Mapped[Teacher] = relationship(foreign_keys=[teacher_id])
     lab_teacher: Mapped[Teacher | None] = relationship(foreign_keys=[lab_teacher_id])
+    lecture_room: Mapped[Classroom | None] = relationship(foreign_keys=[lecture_room_id])
+    lab_room: Mapped[Classroom | None] = relationship(foreign_keys=[lab_room_id])

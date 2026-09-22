@@ -182,7 +182,10 @@ def paired_semesters(content: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def materialize_courses(session: Session, scheme: CourseScheme) -> int:
-    # Rebuilds the queryable Course rows from the scheme's content JSON, which stays the source of record.
+    # Rebuilds the queryable Course rows from the scheme's content JSON, which stays the
+    # source of record. Each row's semester comes straight from the JSON's own semester
+    # grouping (Phase 9), so the Phase 9 dashboard can filter courses by program + semester
+    # without re-deriving it from anywhere else.
     session.execute(delete(Course).where(Course.scheme_id == scheme.id))
 
     rows = [
@@ -191,6 +194,7 @@ def materialize_courses(session: Session, scheme: CourseScheme) -> int:
             code=course["code"],
             name=course["name"],
             credit_hours=course.get("credit_hours"),
+            semester=semester["semester"],
             has_lab=bool(course.get("has_lab", False)),
             lab_credit_hours=course.get("lab_credit_hours"),
             min_marks=course.get("min_marks"),
@@ -201,6 +205,23 @@ def materialize_courses(session: Session, scheme: CourseScheme) -> int:
     ]
     session.add_all(rows)
     return len(rows)
+
+
+def make_course_code(name: str, taken: set[str]) -> str:
+    # A short, stable, human-recognisable code from a subject name (e.g. "Digital Logic
+    # Design" -> "DLD"), falling back to a numeric suffix on the rare chance of a clash.
+    # Shared by the BSCS timetable seed script and the Phase 9 "add a new subject" endpoint,
+    # which both need to mint a Course.code without an official scheme document naming one.
+    letters = "".join(word[0] for word in re.split(r"[\s&-]+", name) if word).upper()
+    digits = "".join(re.findall(r"\d+", name))
+    code = (letters + digits)[:20] or "CRS"
+    candidate = code
+    suffix = 2
+    while candidate in taken:
+        candidate = f"{code}{suffix}"[:20]
+        suffix += 1
+    taken.add(candidate)
+    return candidate
 
 
 def course_counts(session: Session, scheme_ids: list[int]) -> dict[int, tuple[int, int]]:

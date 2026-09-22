@@ -68,6 +68,7 @@ from app.models import (
     TimetableSession,
     TimetableStatus,
 )
+from app.services.course_scheme_service import make_course_code
 
 TIMETABLE_JSON_PATH = Path(__file__).resolve().parents[3] / "docs" / "timetable.json"
 
@@ -238,21 +239,6 @@ def upsert_synthetic_scheme(session: Session, program_id: int) -> CourseScheme:
         )
     }
     return scheme
-
-
-def make_course_code(name: str, taken: set[str]) -> str:
-    # A short, stable, human-recognisable code from the subject name (e.g. "Digital Logic
-    # Design" -> "DLD"), falling back to a numeric suffix on the rare chance of a clash.
-    letters = "".join(word[0] for word in re.split(r"[\s&-]+", name) if word).upper()
-    digits = "".join(re.findall(r"\d+", name))
-    code = (letters + digits)[:20] or "CRS"
-    candidate = code
-    suffix = 2
-    while candidate in taken:
-        candidate = f"{code}{suffix}"[:20]
-        suffix += 1
-    taken.add(candidate)
-    return candidate
 
 
 def upsert_course(

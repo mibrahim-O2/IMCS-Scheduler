@@ -24,6 +24,14 @@ class Course(TimestampMixin, Base):
     # Null means the course is non-credit ("NC" in the scheme documents).
     credit_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Which semester (1-8) this course belongs to within its scheme, read from
+    # CourseScheme.content's semester grouping at materialization time (see
+    # course_scheme_service.materialize_courses). Null for courses whose scheme predates
+    # this column and hasn't been re-materialized, or for a scheme with no semester
+    # grouping at all (e.g. the Phase 7 synthetic timetable-derived scheme) — see
+    # docs/PROJECT_AUDIT.md Phase 9 for why that one is deliberately left unset.
+    semester: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     has_lab: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     lab_credit_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
     min_marks: Mapped[int | None] = mapped_column(Integer, nullable=True)
