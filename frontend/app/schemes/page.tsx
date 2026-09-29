@@ -5,30 +5,34 @@ import { useCallback, useEffect, useState } from "react";
 import { CourseFormStep } from "@/components/scheme-upload/course-form-step";
 import { PreviewStep } from "@/components/scheme-upload/preview-step";
 import { SchemeSlots } from "@/components/scheme-upload/scheme-slots";
+import { SemesterTable } from "@/components/scheme-upload/semester-table";
 import { StepIndicator } from "@/components/scheme-upload/step-indicator";
 import { TextReviewStep } from "@/components/scheme-upload/text-review-step";
 import { UploadStep } from "@/components/scheme-upload/upload-step";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { errorMessage } from "@/lib/api-client";
 import {
   deleteScheme,
   emptyCourse,
   extractSchemeText,
   fetchDepartments,
+  fetchScheme,
   fetchSchemes,
   saveScheme,
   type ExtractionResponse,
   type Program,
+  type SchemeDetail,
   type SchemeSummary,
   type SemesterRows,
 } from "@/lib/schemes";
 
-type Stage = "list" | "upload" | "review" | "form" | "preview";
+type Stage = "list" | "upload" | "review" | "form" | "preview" | "view-courses";
 type Notice = { tone: "success" | "error"; text: string } | null;
 
-const STEP_NUMBERS: Record<Exclude<Stage, "list">, number> = {
+const STEP_NUMBERS: Record<Exclude<Stage, "list" | "view-courses">, number> = {
   upload: 1,
   review: 2,
   form: 3,
@@ -64,6 +68,12 @@ export default function SchemesPage() {
   const [schemeYear, setSchemeYear] = useState(new Date().getFullYear());
   const [semesters, setSemesters] = useState<SemesterRows[]>(blankSemesters);
   const [pendingDelete, setPendingDelete] = useState<SchemeSummary | null>(null);
+
+  // The one scheme currently open in the full-page view, plus its loaded courses.
+  const [viewingScheme, setViewingScheme] = useState<SchemeSummary | null>(null);
+  const [schemeDetail, setSchemeDetail] = useState<SchemeDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const loadSchemes = useCallback(async () => {
     // Refreshes the saved-scheme list; used on first render, after saves and deletes, and by Retry.
@@ -113,6 +123,8 @@ export default function SchemesPage() {
     setExtraction(null);
     setRawText("");
     setSemesters(blankSemesters());
+    setViewingScheme(null);
+    setSchemeDetail(null);
     goTo("list");
   }
 
@@ -122,6 +134,30 @@ export default function SchemesPage() {
     setAppliesToPart(targetPart);
     setSchemeYear(new Date().getFullYear());
     goTo("upload");
+  }
+
+  async function handleViewCourses(scheme: SchemeSummary) {
+    // Opens exactly one scheme in the full-page view and loads its courses.
+    setViewingScheme(scheme);
+    setSchemeDetail(null);
+    setDetailError(null);
+    goTo("view-courses");
+    setLoadingDetail(true);
+    try {
+      setSchemeDetail(await fetchScheme(scheme.id));
+    } catch (cause) {
+      setDetailError(`Couldn't load the courses for this scheme. ${errorMessage(cause)}`);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }
+
+  function handleHideCourses() {
+    // Leaves the full-page view and returns to the slot grid.
+    setViewingScheme(null);
+    setSchemeDetail(null);
+    setDetailError(null);
+    goTo("list");
   }
 
   async function handleExtract() {
@@ -190,18 +226,20 @@ export default function SchemesPage() {
   const selectedProgram = programs.find((program) => program.id === programId);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold text-content">Course schemes</h1>
-        <p className="mt-1 text-sm text-content/70">
-          Each program has four slots, one per Part. Click a slot to upload, check the text read
-          from the document, confirm the course rows, then save.
-        </p>
-      </header>
+    <main className={`mx-auto w-full px-4 py-8 sm:px-6 ${stage === "view-courses" ? "max-w-none" : "max-w-5xl"}`}>
+      {stage !== "view-courses" && (
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold text-content">Course schemes</h1>
+          <p className="mt-1 text-sm text-content/70">
+            Each program has four slots, one per Part. Click a slot to upload, check the text read
+            from the document, confirm the course rows, then save.
+          </p>
+        </header>
+      )}
 
-      {stage !== "list" && (
+      {stage !== "list" && stage !== "view-courses" && (
         <div className="mb-6">
-          <StepIndicator current={STEP_NUMBERS[stage]} />
+          <StepIndicator current={STEP_NUMBERS[stage as Exclude<Stage, "list" | "view-courses">]} />
         </div>
       )}
 
@@ -227,13 +265,47 @@ export default function SchemesPage() {
 
       <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-content/10 sm:p-6">
         {stage === "list" && (
-          <SchemeSlots
-            programs={programs}
-            schemes={schemes}
-            loading={loadingList}
-            onUpload={handleUploadSlot}
-            onRequestDelete={setPendingDelete}
-          />
+          <div className="space-y-4">
+            <SchemeSlots
+              programs={programs}
+              schemes={schemes}
+              loading={loadingList}
+              onUpload={handleUploadSlot}
+              onRequestDelete={setPendingDelete}
+              onViewCourses={handleViewCourses}
+            />
+          </div>
+        )}
+
+        {stage === "view-courses" && viewingScheme && (
+          <div className="space-y-6">
+            <div className="flex flex-col gap-4 border-b border-content/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-content">
+                  {viewingScheme.program_name} — Part {viewingScheme.applies_to_part}
+                </h2>
+                <p className="mt-1 text-sm text-content/70">
+                  Scheme year {viewingScheme.scheme_year} · {viewingScheme.course_count} courses (
+                  {viewingScheme.lab_course_count} labs) · Uploaded{" "}
+                  {new Date(viewingScheme.uploaded_at).toLocaleDateString()}
+                  {viewingScheme.source_filename && <> · {viewingScheme.source_filename}</>}
+                </p>
+              </div>
+              <Button variant="secondary" onClick={handleHideCourses}>
+                Hide courses
+              </Button>
+            </div>
+
+            {loadingDetail && (
+              <p className="flex items-center gap-2 text-sm text-content/60">
+                <Spinner /> Loading courses…
+              </p>
+            )}
+            {detailError && <Alert tone="error">{detailError}</Alert>}
+            {schemeDetail?.semesters.map((semester) => (
+              <SemesterTable key={semester.semester} semester={semester} />
+            ))}
+          </div>
         )}
 
         {stage === "upload" && (
