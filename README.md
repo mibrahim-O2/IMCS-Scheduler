@@ -41,7 +41,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1          # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 Copy-Item .env.example .env           # optional, defaults work; macOS/Linux: cp .env.example .env
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 If PowerShell blocks `Activate.ps1`, skip activation and run
