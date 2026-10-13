@@ -1,5 +1,5 @@
 # IMCS Scheduler
-
+test 
 AI-assisted timetable generation and academic scheduling for the **Institute of
 Mathematics & Computer Science (IMCS), University of Sindh**, built as a Final
 Year Project by team AbstractMinds.
